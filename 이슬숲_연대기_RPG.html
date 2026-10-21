@@ -1,0 +1,530 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#101e24">
+<title>이슬숲 연대기 · DEWBOUND</title>
+<style>
+:root{color-scheme:dark;--bg:#0d191f;--panel:#14252b;--line:#2b4147;--mint:#a5e0c4;--gold:#f0cc8a;--text:#e9f0e6;--muted:#90a9a9}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% 10%,#203b3d 0,#101e24 52%,#0a141a 100%);color:var(--text);font:14px/1.5 "Malgun Gothic","Apple SD Gothic Neo",system-ui,sans-serif;min-height:100vh}button{font:inherit;cursor:pointer;color:inherit}button:focus-visible,a:focus-visible{outline:2px solid var(--gold);outline-offset:4px}button:disabled{opacity:.4;cursor:not-allowed}.shell{width:min(1440px,96vw);margin:0 auto;padding:25px 0 18px}.masthead{display:flex;align-items:center;justify-content:space-between;margin-bottom:19px;gap:20px}.brand{display:flex;align-items:center;gap:13px}.brand-mark{width:43px;height:43px;border:1px solid #628d7d;border-radius:14px 3px 14px 3px;display:grid;place-items:center;color:var(--gold);font-size:28px;transform:rotate(-6deg);background:#243e3c}.brand h1{font-size:23px;font-weight:700;letter-spacing:-1px;margin:0}.brand small{font-size:10px;letter-spacing:3.5px;color:var(--mint);display:block;margin-top:1px}.header-right{display:flex;gap:18px;align-items:center;color:var(--muted);font-size:12px}.live-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--mint);margin-right:7px}.subtle-btn{border:1px solid var(--line);background:#172a30;border-radius:7px;padding:7px 12px;color:#bfcec8}.game-frame{border:1px solid #3b5355;border-radius:13px;box-shadow:0 22px 75px #0006;overflow:hidden;background:var(--panel)}.statusbar{display:flex;align-items:center;gap:24px;padding:15px 21px;background:linear-gradient(90deg,#1c3438,#14262e);border-bottom:1px solid #344a50;min-height:95px}.identity{display:flex;gap:12px;align-items:center;min-width:160px}.portrait{border:1px solid #71927f;background:#304e46;border-radius:13px;position:relative;width:56px;height:58px;overflow:hidden}.portrait canvas{width:56px;height:58px}.identity strong{display:block;font-size:17px;letter-spacing:1px}.identity small{display:block;font-size:10px;color:var(--muted)}.level{color:var(--gold);font-size:11px;margin-top:3px;display:block}.vitals{flex:1;max-width:510px;display:grid;gap:6px}.bar-row{display:flex;align-items:center;gap:9px;font-size:10px;font-weight:700}.bar-row>span{width:24px;letter-spacing:1px;color:#c1d5cf}.bar{position:relative;overflow:hidden;background:#0c1b23;border:1px solid #345058;border-radius:4px;height:16px;flex:1}.bar i{display:block;height:100%;width:100%;transition:width .22s;background:linear-gradient(90deg,#d4746a,#f1a18a)}.bar.mp i{background:linear-gradient(90deg,#497fa5,#85c4d1)}.bar.exp{height:7px}.bar.exp i{background:linear-gradient(90deg,#7aaf81,#cfdfa2)}.bar b{position:absolute;inset:0;text-align:center;font-size:10px;font-weight:500;line-height:14px;text-shadow:0 1px 3px #000}.exp-text{font-size:9px;color:#aec3b9;white-space:nowrap;min-width:56px}.currency{margin-left:auto;min-width:95px;text-align:right}.currency small{color:var(--muted);font-size:9px;letter-spacing:2px}.currency strong{display:block;color:var(--gold);font-size:22px;font-variant-numeric:tabular-nums}.coin{font-size:18px;margin-right:6px}.hud-divider{width:1px;height:43px;background:var(--line)}.status-note{font-size:11px;color:var(--muted);line-height:1.7}.status-note b{font-weight:400;color:var(--mint)}
+.viewport{position:relative;aspect-ratio:2/1;isolation:isolate;background:#82b5a3}.world{display:block;width:100%;height:100%;outline:none}.map-name{position:absolute;top:19px;left:50%;transform:translateX(-50%);text-align:center;pointer-events:none;text-shadow:0 2px 9px #173c37}.map-name small{font-size:9px;letter-spacing:3px;color:#eef7dc}.map-name strong{display:block;font-size:18px;letter-spacing:2px;color:#fff9dd}.map-name span{font-size:10px;color:#edf6e5}.quest-tracker{position:absolute;left:18px;top:18px;width:246px;background:linear-gradient(120deg,#112d30ef,#173d3fd9);border:1px solid #90b7a249;border-radius:8px;padding:12px 14px;pointer-events:none;box-shadow:0 4px 15px #173c3720}.eyebrow{font-size:9px;letter-spacing:2px;color:var(--gold)}.quest-tracker h3{font-size:12px;margin:6px 0 4px;font-weight:600}.quest-tracker p{font-size:10px;color:#bbd1c4;margin:0;line-height:1.6}.quest-track{height:3px;background:#ffffff14;margin-top:9px;border-radius:3px;overflow:hidden}.quest-track i{display:block;width:0;height:100%;background:var(--gold);transition:width .3s}.quest-count{float:right;color:var(--gold)}.minimap{position:absolute;right:18px;top:18px;width:188px;border:1px solid #87b09f66;border-radius:8px;background:#173539df;padding:8px 10px;pointer-events:none}.minimap header{display:flex;justify-content:space-between;align-items:center;font-size:9px;letter-spacing:1px;color:#b4cfc0}.minimap canvas{width:166px;height:68px;display:block;margin:5px 0}.map-legend{display:flex;gap:10px;font-size:8px;color:#aec6bc}.map-legend em{font-style:normal;color:#f6d797}.map-legend b{color:#96d8ec}.area-hint{position:absolute;bottom:18px;left:20px;color:#fff7dd;text-shadow:0 1px 4px #15342c;font-size:11px;pointer-events:none}.area-hint span{display:inline-block;background:#173b35b8;padding:5px 10px;border-radius:5px}.toasts{position:absolute;bottom:26px;right:20px;display:grid;gap:6px;width:270px;pointer-events:none;z-index:3}.toast{animation:toast-in .2s ease-out;background:#102e32ed;border:1px solid #729b7b75;border-left:3px solid var(--gold);padding:9px 12px;border-radius:5px;font-size:11px;color:#edf1d7;box-shadow:0 4px 15px #0002}.toast small{display:block;color:#a9c7bb;font-size:10px}@keyframes toast-in{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:translateX(0)}}
+.toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;background:linear-gradient(#1b3037,#14272e);padding:12px 20px;border-top:1px solid #3c5659;min-height:85px}.shortcuts{display:flex;gap:7px}.action{position:relative;background:#20383e;border:1px solid #3c575b;border-radius:8px;min-width:65px;padding:7px 10px;display:grid;justify-items:center;gap:2px;overflow:hidden}.action .symbol{font-size:23px;line-height:1.1;color:#ceded0}.action small{font-size:9px;color:#a0b6b5}.action kbd{position:absolute;left:5px;top:3px;font-size:8px;background:transparent;border:0;padding:0;color:#d2dfd6}.action.skill{border-color:#7e997b;background:#294741}.action.skill .symbol{color:var(--gold)}.action .cooldown{position:absolute;inset:0;background:#102127cc;display:none;place-items:center;font-size:20px;font-weight:700;color:var(--gold)}.action.potion .symbol{color:#edaa95}.action.mana .symbol{color:#a2cfdf}.toolbar-note{color:#8ea8a7;font-size:10px;text-align:center;line-height:1.8}.toolbar-note strong{font-weight:500;color:#bed6c8}.menu-buttons{display:flex;gap:7px}.menu-button{background:#1b323a;border:1px solid #3d575b;border-radius:7px;padding:11px 13px;font-size:11px;color:#d7e2d8;white-space:nowrap}.menu-button kbd{margin-left:7px;color:var(--gold)}kbd{font-family:inherit;font-size:10px;display:inline-block;min-width:18px;text-align:center;border:1px solid #526568;border-bottom-width:2px;background:#263940;border-radius:4px;padding:0 4px;color:#dce6dd}.footer{display:flex;justify-content:space-between;gap:15px;margin-top:15px;color:#829b9d;font-size:10px}.controls{display:flex;gap:14px;flex-wrap:wrap}.controls>span{white-space:nowrap}.footer-note{color:#637d82;white-space:nowrap}
+.overlay{position:absolute;inset:0;background:#0b232b88;backdrop-filter:blur(5px);display:none;align-items:center;justify-content:center;z-index:10;padding:20px}.overlay.open{display:flex}.dialog{background:linear-gradient(145deg,#203b40,#13272e);border:1px solid #739181;border-radius:13px;box-shadow:0 18px 70px #07171b90;width:min(560px,94%);max-height:96%;overflow:auto;padding:25px 28px;position:relative}.dialog.wide{width:min(700px,94%)}.dialog .close{position:absolute;right:13px;top:10px;border:0;background:transparent;font-size:21px;color:#a7c0b7}.dialog h2{font-size:23px;margin:8px 0 12px;letter-spacing:-.5px}.dialog p{color:#c0d2c7;font-size:13px;line-height:1.9;margin:10px 0}.dialog .divider{height:1px;background:#ffffff1a;margin:18px 0}.dialog .primary{border:1px solid #d5d4a2;background:#c4d4ab;color:#1b3533;font-weight:700;border-radius:6px;padding:11px 21px;box-shadow:0 3px 0 #172f2c;font-size:12px}.dialog .secondary{border:1px solid #5e7a78;background:#253f43;color:#d0e0d3;border-radius:6px;padding:10px 18px;font-size:12px}.dialog .buttons{display:flex;gap:9px;justify-content:flex-end;flex-wrap:wrap;margin-top:19px}.dialog .reward{padding:13px;background:#10272d;border:1px solid #536b59;border-radius:6px;font-size:11px;color:var(--gold)}.welcome{padding:29px 34px;width:min(570px,94%)}.welcome h2{font-size:37px;letter-spacing:-2px;margin:12px 0 6px}.welcome .intro{font-size:12px;max-width:410px}.welcome .tagline{font-size:10px;letter-spacing:4px;color:var(--mint)}.intro-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:22px 0}.intro-grid div{padding:12px 7px;background:#0d272a80;border:1px solid #6585734d;border-radius:7px;text-align:center;font-size:10px;color:#b6cdbd}.intro-grid b{display:block;color:var(--gold);font-size:20px;margin-bottom:4px}.welcome .buttons{justify-content:space-between;align-items:center}.muted{color:#92ada7;font-size:10px}.welcome .leaf-emblem{position:absolute;right:30px;top:25px;font-size:43px;color:#c5d5ad66}.inventory-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-top:17px}.item-slot{position:relative;min-height:99px;border:1px solid #46625e;background:#163038;border-radius:7px;padding:9px 5px;text-align:center;display:grid;justify-items:center;align-content:center;gap:2px}.item-slot.empty{border-style:dashed;opacity:.5}.item-slot .item-symbol{font-size:28px;line-height:1.2}.item-slot strong{font-size:10px;font-weight:500}.item-slot small{font-size:9px;color:#9cbab0}.item-slot .qty{position:absolute;right:6px;top:4px;font-size:10px;color:var(--gold)}.shop-list{display:grid;gap:8px;margin-top:13px}.shop-row{display:flex;align-items:center;gap:13px;background:#112b31;border:1px solid #395851;border-radius:7px;padding:11px 13px}.shop-icon{font-size:29px;min-width:36px;text-align:center}.shop-desc{flex:1}.shop-desc strong{font-size:12px;display:block}.shop-desc small{font-size:10px;color:#98b8ac}.shop-buy{border:1px solid #85956c;color:var(--gold);background:#2a4239;border-radius:5px;padding:7px 12px;font-size:11px}.help-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;font-size:11px;color:#c0d4c7}.help-grid span{display:flex;gap:7px;align-items:center}.quest-progress{display:flex;gap:5px;margin:17px 0}.quest-progress i{height:9px;flex:1;border-radius:3px;background:#0d242c;border:1px solid #3d605a}.quest-progress i.done{background:#e3cb86}.dialog-toast{font-size:11px;color:var(--gold);min-height:18px;margin-top:9px}.new-game-confirm{font-size:11px;color:#d7b48b}
+.game-frame:fullscreen{display:flex;flex-direction:column;border:0;border-radius:0}.game-frame:fullscreen .viewport{flex:1;min-height:0;aspect-ratio:auto}.game-frame:fullscreen .world{object-fit:contain}.game-frame:fullscreen .statusbar,.game-frame:fullscreen .toolbar{flex-shrink:0}@media(min-width:1600px){.shell{padding-top:35px}}@media(max-width:1000px){.status-note,.hud-divider,.toolbar-note,.footer-note{display:none}.statusbar{gap:15px}.quest-tracker{transform:scale(.82);transform-origin:top left}.minimap{transform:scale(.85);transform-origin:top right}.toolbar{padding:9px 13px}.menu-button{padding:10px}.map-name strong{font-size:15px}.dialog{padding:19px 23px}.welcome h2{font-size:30px}.welcome .intro-grid{margin:12px 0}.dialog p{font-size:12px;margin:7px 0}}@media(max-width:700px){.shell{width:98vw;padding-top:12px}.header-right>span{display:none}.brand h1{font-size:19px}.masthead{margin-bottom:10px}.statusbar{padding:9px 12px;min-height:77px;gap:10px}.identity{min-width:115px;gap:7px}.portrait{width:40px;height:46px}.portrait canvas{width:40px;height:46px}.identity strong{font-size:14px}.identity small{display:none}.currency{min-width:60px}.currency strong{font-size:17px}.quest-tracker{transform:scale(.65);left:9px;top:9px}.minimap{transform:scale(.65);right:9px;top:9px}.map-name{top:10px}.map-name small,.map-name span{display:none}.action{min-width:45px;padding:5px 7px}.action .symbol{font-size:19px}.menu-button{padding:9px 6px;font-size:10px}.menu-button kbd{display:none}.toolbar{gap:5px;padding:7px}.shortcuts{gap:4px}.footer{padding:0 8px}.controls{gap:7px;font-size:9px}.viewport{min-height:330px;aspect-ratio:auto}.world{object-fit:contain}.area-hint{display:none}.overlay{padding:7px}.dialog{max-height:98%;padding:15px 19px}.welcome h2{font-size:25px;margin:6px 0}.welcome .intro-grid{margin:9px 0}.intro-grid div{padding:7px 5px}.intro-grid b{font-size:15px}.welcome .intro{font-size:11px;line-height:1.6}.dialog .buttons{margin-top:10px}.welcome .leaf-emblem{display:none}.item-slot{min-height:75px}.inventory-grid{gap:6px}.toasts{right:9px;bottom:9px;width:210px}.toast{font-size:10px;padding:6px 9px}}@media(prefers-reduced-motion:reduce){.toast{animation:none}.bar i,.quest-track i{transition:none}}
+</style>
+</head>
+<body>
+<main class="shell">
+ <header class="masthead"><div class="brand"><div class="brand-mark" aria-hidden="true">☽</div><div><h1>이슬숲 연대기</h1><small>DEWBOUND CHRONICLES</small></div></div><div class="header-right"><span><i class="live-dot"></i>작은 숲, 당신의 첫 번째 모험</span><button class="subtle-btn" id="soundBtn" title="효과음 켜기/끄기 (M)" aria-label="효과음 켜기 또는 끄기">♪ 사운드 ON</button><button class="subtle-btn" id="helpBtn" title="조작법">? 도움말</button></div></header>
+ <section class="game-frame" aria-label="이슬숲 연대기 게임">
+  <div class="statusbar"><div class="identity"><div class="portrait"><canvas id="portrait" width="112" height="116" aria-label="루미온 초상화"></canvas></div><div><strong>루미온</strong><small>새벽을 걷는 숲지기</small><span class="level" id="levelText">LV. 01 · 새싹 여행자</span></div></div><div class="vitals"><div class="bar-row"><span>HP</span><div class="bar"><i id="hpFill"></i><b id="hpText">120 / 120</b></div></div><div class="bar-row"><span>MP</span><div class="bar mp"><i id="mpFill"></i><b id="mpText">70 / 70</b></div></div><div class="bar-row"><span>EXP</span><div class="bar exp"><i id="xpFill" style="width:0"></i></div><label class="exp-text" id="xpText">0 / 70</label></div></div><div class="currency"><small>MY WALLET</small><strong><span class="coin">◈</span><span id="goldText">50</span></strong></div><div class="hud-divider"></div><div class="status-note"><b>숲의 기록은 자동 저장됩니다</b><br><span id="saveStatus">나만의 속도로 탐험해 보세요</span></div></div>
+  <div class="viewport" id="viewport"><canvas class="world" id="game" width="1280" height="640" tabindex="0" aria-label="방향키 이동, Alt 점프, Ctrl 공격, Shift 초승 파동. 위 방향키로 NPC와 포탈 이용."></canvas><div class="quest-tracker"><div class="eyebrow">FOREST JOURNAL <span class="quest-count" id="questCount">NEW</span></div><h3 id="questTitle">숲에서 온 작은 부탁</h3><p id="questDesc">수림지기 오린에게 다가가 ↑로 대화하세요.</p><div class="quest-track"><i id="questFill"></i></div></div><div class="map-name"><small id="mapEnglish">DAWNLANTERN VILLAGE</small><strong id="mapName">새벽등 마을</strong><span id="mapSubtitle">등불 아래, 모험이 시작되는 곳</span></div><div class="minimap"><header><span>MINIMAP</span><span id="areaType">SAFE ZONE</span></header><canvas id="minimap" width="332" height="136" aria-label="현재 맵의 발판과 캐릭터 위치"></canvas><div class="map-legend"><span><em>●</em> 나</span><span><b>◇</b> 포탈</span><span>· NPC / 몬스터</span></div></div><div class="area-hint"><span id="areaHint">✦ 마을에서는 HP와 MP가 천천히 회복됩니다</span></div><div id="toasts" class="toasts" role="status" aria-live="polite"></div><div id="overlay" class="overlay"><section id="dialog" class="dialog" role="dialog" aria-modal="true" aria-labelledby="dialogTitle"></section></div></div>
+  <div class="toolbar"><div class="shortcuts"><button class="action" id="attackBtn" title="기본 공격 (Ctrl)"><kbd>Ctrl</kbd><span class="symbol">⚔</span><small>가지 검격</small></button><button class="action skill" id="skillBtn" title="초승 파동 (Shift), MP 18, 재사용 4초"><kbd>Shift</kbd><span class="symbol">☽</span><small>초승 파동</small><span class="cooldown" id="skillCooldown"></span></button><button class="action potion" id="hpBtn" title="홍이슬 병 사용 (1)"><kbd>1</kbd><span class="symbol">♜</span><small id="hpQty">홍이슬 × 5</small></button><button class="action mana" id="mpBtn" title="청이슬 병 사용 (2)"><kbd>2</kbd><span class="symbol">♜</span><small id="mpQty">청이슬 × 3</small></button></div><div class="toolbar-note"><strong>등불을 따라, 숲 너머로.</strong><br>아이템은 가까이 가면 자동으로 줍습니다</div><div class="menu-buttons"><button class="menu-button" id="inventoryBtn">▦ 가방 <kbd>I</kbd></button><button class="menu-button" id="questBtn">▤ 퀘스트 <kbd>Q</kbd></button><button class="menu-button" id="pauseBtn" title="일시정지 (P)">Ⅱ <kbd>P</kbd></button><button class="menu-button" id="fullBtn" title="전체 화면 (F)">⛶ <kbd>F</kbd></button></div></div>
+ </section>
+ <footer class="footer"><div class="controls"><span><kbd>←</kbd> <kbd>→</kbd> 이동</span><span><kbd>Alt</kbd> 점프</span><span><kbd>↑</kbd> <kbd>↓</kbd> 사다리·로프</span><span><kbd>Ctrl</kbd> 공격</span><span><kbd>Shift</kbd> 스킬</span><span><kbd>↑</kbd> 대화·포탈</span><span><kbd>↓</kbd>+<kbd>Alt</kbd> 내려가기</span></div><span class="footer-note">ORIGINAL CANVAS WORLD · <span id="fps">60</span> FPS</span></footer>
+</main>
+<script>
+'use strict';
+/* ============================================================
+   이슬숲 연대기 — DEWBOUND CHRONICLES
+   단일 파일 / Canvas 2D / 모든 그림과 소리는 코드로 생성
+   코드 안내: 01 정의 → 02 저장 → 03 오디오 → 04 UI →
+   05 입력 → 06 게임 로직 → 07 그래픽 → 08 루프 / 진단
+   ============================================================ */
+(() => {
+const $ = id => document.getElementById(id);
+const canvas=$('game'), ctx=canvas.getContext('2d'), mini=$('minimap').getContext('2d');
+const W=1280,H=640,GROUND=560,GRAVITY=1450,SAVE_KEY='dewbound-v1';
+const clamp=(n,a,b)=>Math.max(a,Math.min(b,n)), rand=(a,b)=>a+Math.random()*(b-a);
+const near=(a,b,r)=>Math.abs(a-b)<r;
+let worldTime=0, camera=0, started=false, modal=null, audioEnabled=true, audioCtx=null;
+let mobs=[],drops=[],particles=[],floats=[],slashes=[],shake=0,mapFlash=0,saveTimer=0,uiTimer=0;
+const keys=new Set();
+let lastFrame=0,accumulator=0,frameCount=0,fpsElapsed=0,actualFps=60,focusedBeforeModal=null;
+const FIXED=1/120;
+
+// 01. 콘텐츠 정의 — 아이템, 몬스터, 맵, NPC, 퀘스트를 이곳에서 변경합니다.
+const ITEMS={
+ hp:{name:'홍이슬 병',icon:'♜',color:'#f1a18a',desc:'HP 70 회복',price:22,heal:70,type:'potion'},
+ mp:{name:'청이슬 병',icon:'♜',color:'#9bd3e7',desc:'MP 45 회복',price:24,mana:45,type:'potion'},
+ dew:{name:'숲심장 병',icon:'✦',color:'#bfdda0',desc:'HP·MP 완전 회복',price:85,full:true,type:'potion'},
+ seed:{name:'고요의 씨앗',icon:'❧',color:'#b6d79a',desc:'풀솜이가 남긴 씨앗',sell:7,type:'material'},
+ feather:{name:'은빛 깃조각',icon:'◩',color:'#d8ddd3',desc:'등돌새의 반짝이는 깃',sell:12,type:'material'},
+ glass:{name:'달유리 조각',icon:'◇',color:'#bbd9ed',desc:'달콩발의 빛나는 보석',sell:10,type:'material'}
+};
+const MONSTERS={
+ puff:{name:'풀솜이',w:38,h:32,hp:44,speed:47,damage:7,xp:24,gold:[7,12],drop:'seed',pattern:'patrol',color:'#a6cc84'},
+ crag:{name:'등돌새',w:58,h:53,hp:98,speed:70,damage:12,xp:42,gold:[13,20],drop:'feather',pattern:'chase',color:'#849da5'},
+ hop:{name:'달콩발',w:37,h:44,hp:66,speed:82,damage:9,xp:33,gold:[10,16],drop:'glass',pattern:'jump',color:'#e8b47b'}
+};
+const MAPS={
+ town:{name:'새벽등 마을',english:'DAWNLANTERN VILLAGE',subtitle:'등불 아래, 모험이 시작되는 곳',width:1840,safe:true,
+  platforms:[{x:0,y:560,w:1840,ground:true},{x:750,y:400,w:370},{x:1220,y:440,w:220}],
+  ladders:[{x:1030,top:400,bottom:560,type:'ladder'}],
+  portals:[{x:1650,y:560,to:'forest',spawn:185,label:'유리이끼 숲'}],
+  npcs:[{x:460,y:560,id:'orin',name:'오린',role:'수림지기',color:'#cfb875'},{x:1010,y:560,id:'miel',name:'미엘',role:'이슬 잡화점',color:'#d2968d'}],spawns:[]},
+ forest:{name:'유리이끼 숲',english:'GLASSMOSS WOODLAND',subtitle:'작은 발걸음마다, 새로운 이야기',width:3000,safe:false,
+  platforms:[{x:0,y:560,w:3000,ground:true},{x:420,y:425,w:550},{x:1040,y:425,w:570},{x:1810,y:420,w:600},{x:780,y:295,w:700},{x:1630,y:285,w:510},{x:1240,y:175,w:660}],
+  ladders:[{x:570,top:425,bottom:560,type:'ladder'},{x:890,top:295,bottom:425,type:'ladder'},{x:1350,top:175,bottom:295,type:'rope'},{x:1510,top:425,bottom:560,type:'rope'},{x:2030,top:285,bottom:420,type:'ladder'},{x:2240,top:420,bottom:560,type:'ladder'}],
+  portals:[{x:125,y:560,to:'town',spawn:1545,label:'새벽등 마을'}],npcs:[],
+  spawns:[{kind:'puff',x:510,p:0},{kind:'puff',x:800,p:0},{kind:'crag',x:1130,p:0},{kind:'hop',x:1500,p:0},{kind:'puff',x:1850,p:0},{kind:'crag',x:2300,p:0},{kind:'hop',x:2700,p:0},{kind:'puff',x:710,p:1},{kind:'hop',x:1200,p:2},{kind:'crag',x:2000,p:3},{kind:'hop',x:1100,p:4},{kind:'puff',x:1820,p:5},{kind:'crag',x:1570,p:6}]
+ }
+};
+const QUEST={name:'숲의 소란을 잠재워 줘',target:8,gold:150,xp:65,potions:2};
+function freshPlayer(){return {name:'루미온',x:280,y:GROUND,vx:0,vy:0,w:30,h:53,dir:1,grounded:true,climbing:false,ladder:null,level:1,xp:0,hp:120,mp:70,gold:50,attackCd:0,attackAnim:0,skillCd:0,skillAnim:0,invuln:0,dropThrough:0,walk:0,kills:0,bag:{hp:5,mp:3,dew:0,seed:0,feather:0,glass:0},quest:{state:'new',count:0}};}
+let player=freshPlayer(),mapId='town',map=MAPS.town;
+const maxHP=()=>120+(player.level-1)*22, maxMP=()=>70+(player.level-1)*8, xpNeeded=()=>Math.floor(70*Math.pow(1.38,player.level-1));
+const qty=id=>player.bag[id]||0;
+
+// 02. 저장 — file://에서도 가능한 localStorage. 차단되면 현재 세션으로 플레이.
+let storageOK=true,saved=null;
+try{const raw=localStorage.getItem(SAVE_KEY);if(raw){const s=JSON.parse(raw);if(s.version===1&&s.player&&Number.isFinite(s.player.level))saved=s;}}catch(e){storageOK=false;}
+function save(){
+ if(!started)return;
+ try{localStorage.setItem(SAVE_KEY,JSON.stringify({version:1,player:{level:player.level,xp:player.xp,hp:player.hp,mp:player.mp,gold:player.gold,bag:player.bag,quest:player.quest,kills:player.kills},audio:audioEnabled,time:Date.now()}));$('saveStatus').textContent='모험 기록 저장됨 · 안전하게 이어하기 가능';}
+ catch(e){storageOK=false;$('saveStatus').textContent='브라우저 저장 제한 · 현재 창에서 플레이 가능';}
+}
+function restore(){
+ if(!saved)return;
+ const s=saved.player;
+ player.level=clamp(Math.floor(s.level),1,99);
+ for(const key of ['xp','gold','kills'])player[key]=Number.isFinite(s[key])?Math.max(0,Math.floor(s[key])):0;
+ player.xp=Math.min(player.xp,xpNeeded()-1);
+ player.hp=clamp(Number(s.hp)||maxHP(),1,maxHP());player.mp=clamp(Number(s.mp)||0,0,maxMP());
+ for(const id of Object.keys(ITEMS))player.bag[id]=clamp(Math.floor(Number(s.bag?.[id])||0),0,9999);
+ if(['new','active','done'].includes(s.quest?.state))player.quest={state:s.quest.state,count:clamp(Math.floor(Number(s.quest.count)||0),0,QUEST.target)};
+ audioEnabled=saved.audio!==false;updateSoundButton();
+}
+function begin(load){player=freshPlayer();if(load)restore();started=true;initAudio();closeModal();enterMap('town',280);toast(load?'다시 만나 반가워요, 루미온.':'새벽등 마을에 오신 것을 환영해요.','오린 옆에서 ↑를 눌러 첫 퀘스트를 받아 보세요.');save();}
+
+// 03. Web Audio — 외부 음원 없이 합성한 점프 / 검격 / 피격 / 레벨업 소리.
+function initAudio(){
+ try{if(!audioCtx){const A=window.AudioContext||window.webkitAudioContext;if(A)audioCtx=new A();}if(audioCtx?.state==='suspended')audioCtx.resume().catch(()=>{});}catch(e){audioCtx=null;}
+}
+function tone(freq,duration,type='sine',volume=.07,delay=0,endFreq=null){
+ if(!audioEnabled||!audioCtx)return;
+ try{const t=audioCtx.currentTime+delay,o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type=type;o.frequency.setValueAtTime(freq,t);if(endFreq)o.frequency.exponentialRampToValueAtTime(endFreq,t+duration);g.gain.setValueAtTime(.001,t);g.gain.exponentialRampToValueAtTime(volume,t+.01);g.gain.exponentialRampToValueAtTime(.001,t+duration);o.connect(g);g.connect(audioCtx.destination);o.start(t);o.stop(t+duration+.02);o.onended=()=>{o.disconnect();g.disconnect();};}catch(e){}
+}
+function sfx(name){
+ if(name==='jump')tone(240,.15,'sine',.045,0,540);
+ if(name==='attack'){tone(210,.1,'triangle',.06,0,70);tone(640,.065,'sine',.035);}
+ if(name==='skill'){tone(180,.4,'sine',.06,0,700);[440,660,880].forEach((n,i)=>tone(n,.2,'triangle',.04,i*.06));}
+ if(name==='hit'){tone(140,.12,'sawtooth',.025,0,65);tone(90,.14,'triangle',.06);}
+ if(name==='hurt')tone(180,.2,'triangle',.08,0,55);
+ if(name==='level')[392,494,587,784,988].forEach((n,i)=>tone(n,.28,'sine',.06,i*.09));
+ if(name==='coin')tone(1100,.09,'sine',.035,0,1500);
+ if(name==='potion'){tone(440,.16,'sine',.04,0,660);tone(880,.2,'sine',.04,.1);}
+ if(name==='quest')[523,659,784,1047].forEach((n,i)=>tone(n,.3,'triangle',.045,i*.1));
+ if(name==='portal'){tone(220,.4,'sine',.04,0,880);tone(330,.4,'sine',.03,.07,1320);}
+}
+function updateSoundButton(){$('soundBtn').textContent=audioEnabled?'♪ 사운드 ON':'♪ 사운드 OFF';$('soundBtn').setAttribute('aria-pressed',String(audioEnabled));}
+function toggleSound(){audioEnabled=!audioEnabled;initAudio();updateSoundButton();save();}
+
+// 04. 창 / HUD — 창이 열려 있으면 전투와 쿨다운을 포함한 게임 시간이 멈춥니다.
+let toastId=0;
+function toast(title,detail=''){
+ const el=document.createElement('div');el.className='toast';el.dataset.id=String(++toastId);el.textContent=title;
+ if(detail){const small=document.createElement('small');small.textContent=detail;el.append(small);}
+ $('toasts').append(el);while($('toasts').children.length>3)$('toasts').firstElementChild.remove();setTimeout(()=>el.remove(),4200);
+}
+function openModal(type,html,wide=false){
+ if(!modal)focusedBeforeModal=document.activeElement;modal=type;keys.clear();player.vx=0;$('dialog').className='dialog'+(wide?' wide':'')+(type==='welcome'?' welcome':'');
+ $('dialog').innerHTML=html;$('overlay').classList.add('open');requestAnimationFrame(()=>{const first=$('dialog').querySelector('.primary,button');if(first)first.focus({preventScroll:true});});
+}
+function closeModal(){if(!started){welcome();return;}modal=null;$('overlay').classList.remove('open');keys.clear();lastFrame=performance.now();accumulator=0;canvas.focus({preventScroll:true});}
+const closeButton='<button class="close" data-action="close" aria-label="창 닫기">×</button>';
+function welcome(){
+ openModal('welcome','<span class="leaf-emblem">☽</span><div class="eyebrow">A LITTLE WORLD, A NEW ADVENTURE</div><h2 id="dialogTitle">이슬숲 연대기</h2><div class="tagline">DEWBOUND CHRONICLES</div><p class="intro">이슬이 반짝이는 숲에 작은 소란이 일었어요.<br>숲지기 <b>루미온</b>이 되어, 당신만의 첫 모험을 시작하세요.</p><div class="intro-grid"><div><b>↔</b>발판을 넘는 탐험</div><div><b>⚔</b>세 가지 숲속 생명</div><div><b>✦</b>조금씩 자라는 용기</div></div><p class="muted"><kbd>←</kbd> <kbd>→</kbd> 이동 &nbsp; <kbd>Alt</kbd> 점프 &nbsp; <kbd>Ctrl</kbd> 공격<br><kbd>↑</kbd> 대화·포탈 &nbsp; <kbd>Shift</kbd> 초승 파동</p><div class="buttons"><span class="muted">키보드로 즐기는 싱글 플레이 RPG<br>모든 그래픽과 효과음은 오리지널입니다</span><button class="primary" data-action="'+(saved?'continue':'begin')+'">'+(saved?'모험 이어가기 →':'모험 시작하기 →')+'</button></div>'+(saved?'<div class="buttons"><button class="secondary" data-action="new-confirm">새 모험 시작</button></div>':''));
+}
+function inventory(){
+ if(!started)return;
+ let slots=Object.entries(ITEMS).map(([id,it])=>'<button class="item-slot'+(qty(id)?'':' empty')+'" data-item="'+id+'" '+(qty(id)?'':'disabled')+' title="'+it.desc+'"><span class="qty">'+qty(id)+'</span><span class="item-symbol" style="color:'+it.color+'">'+it.icon+'</span><strong>'+it.name+'</strong><small>'+(it.type==='potion'?'클릭하여 사용':'판매용 재료')+'</small></button>').join('');
+ for(let i=0;i<6;i++)slots+='<div class="item-slot empty"><small>빈 슬롯</small></div>';
+ openModal('inventory',closeButton+'<div class="eyebrow">YOUR LITTLE COLLECTION</div><h2 id="dialogTitle">여행자의 가방 <span class="muted">12 SLOTS</span></h2><p>포션을 클릭하면 사용합니다. 재료는 마을의 미엘에게 판매할 수 있어요.</p><div class="inventory-grid">'+slots+'</div><div class="dialog-toast" id="dialogMessage"></div><div class="buttons"><span class="muted">◈ '+player.gold+' 골드 · 같은 아이템은 한 칸에 쌓입니다</span><button class="secondary" data-action="close">닫기 · Esc</button></div>',true);
+}
+function questWindow(fromNPC=false){
+ if(!started)return;
+ const q=player.quest;let body='',button='';
+ if(q.state==='new'){body='“유리이끼 숲의 생명들이 낯선 빛 때문에 놀란 모양이야. 숲의 몬스터 <b>8마리</b>를 진정시키고 돌아와 주겠니? 종류는 상관없단다.”';button=fromNPC?'<button class="primary" data-action="accept">부탁을 맡을게요</button>':'<span class="muted">마을의 오린에게 ↑로 말을 걸어 수락하세요.</span>';}
+ else if(q.state==='done'){body='“네 덕분에 숲이 평온해졌어. 고맙다, 루미온! 이제 더 높은 발판에도 올라가 보렴.”<br><b>퀘스트 완료 · 보상을 모두 받았습니다.</b>';}
+ else if(q.count>=QUEST.target){body='“숲의 소란을 모두 잠재웠구나! 여기, 네 모험에 도움이 되길 바랄게.”';button=fromNPC?'<button class="primary" data-action="claim">보상 받기 ✦</button>':'<span class="muted">새벽등 마을로 돌아가 오린에게 보상을 받으세요.</span>';}
+ else{body='“유리이끼 숲은 마을 오른쪽 포탈 너머에 있어. <b>↑</b>를 누르면 이동할 수 있단다. 무리하지 말고, 포션도 챙기렴.”';}
+ const progress=Array.from({length:QUEST.target},(_,i)=>'<i class="'+(i<q.count?'done':'')+'"></i>').join('');
+ openModal(fromNPC?'npc':'quest',closeButton+'<div class="eyebrow">FOREST KEEPER · 수림지기 오린</div><h2 id="dialogTitle">'+QUEST.name+'</h2><p>'+body+'</p><div class="quest-progress">'+progress+'</div><p class="muted">몬스터 진정시키기 <b>'+q.count+' / '+QUEST.target+'</b></p><div class="reward">완료 보상 &nbsp; ◈ 150 골드 &nbsp; ✦ 65 EXP &nbsp; 홍이슬 병 × 2</div><div class="buttons"><button class="secondary" data-action="close">'+(q.state==='done'?'고마워요':'다음에 이야기해요')+'</button>'+button+'</div>');
+}
+function shop(message=''){
+ const rows=['hp','mp','dew'].map(id=>{const it=ITEMS[id];return '<div class="shop-row"><span class="shop-icon" style="color:'+it.color+'">'+it.icon+'</span><div class="shop-desc"><strong>'+it.name+'</strong><small>'+it.desc+' · 보유 '+qty(id)+'개</small></div><button class="shop-buy" data-buy="'+id+'" '+(player.gold<it.price?'disabled':'')+'>◈ '+it.price+' · 구매</button></div>';}).join('');
+ const value=materialValue();
+ openModal('shop',closeButton+'<div class="eyebrow">MIEL’S LITTLE SHOP · 미엘의 이슬 잡화점</div><h2 id="dialogTitle">모험에 필요한 작은 것들</h2><p>“어서 와요! 숲에서 주운 재료도 좋은 값에 살게요.”</p><div class="reward">내 지갑 &nbsp; ◈ '+player.gold+' 골드</div><div class="shop-list">'+rows+'</div><div class="dialog-toast" id="dialogMessage">'+message+'</div><div class="buttons"><button class="secondary" data-action="sell" '+(!value?'disabled':'')+'>재료 모두 판매 · '+value+' G</button><button class="primary" data-action="close">여행 계속하기</button></div>');
+}
+function materialValue(){return Object.entries(ITEMS).reduce((sum,[id,it])=>sum+(it.sell||0)*qty(id),0);}
+function buy(id){const it=ITEMS[id];if(modal!=='shop'||!it?.price)return false;if(player.gold<it.price){shop('골드가 부족해요.');return false;}if(qty(id)>=9999){shop('이 아이템은 더 담을 수 없어요.');return false;}player.gold-=it.price;player.bag[id]++;sfx('coin');shop(it.name+' 1개를 구입했어요.');updateHUD();save();return true;}
+function sell(){const value=materialValue();if(modal!=='shop'||value<=0)return;player.gold+=value;for(const [id,it] of Object.entries(ITEMS))if(it.sell)player.bag[id]=0;sfx('coin');shop('재료를 팔아 '+value+' 골드를 받았어요.');updateHUD();save();}
+function acceptQuest(){if(modal!=='npc'||player.quest.state!=='new')return;player.quest.state='active';closeModal();toast('새 퀘스트 · '+QUEST.name,'숲의 몬스터 8마리를 처치한 뒤 오린에게 돌아오세요.');sfx('quest');updateHUD();save();}
+function claimQuest(){if(modal!=='npc'||player.quest.state!=='active'||player.quest.count<QUEST.target)return false;player.quest.state='done';player.gold+=QUEST.gold;player.bag.hp=Math.min(9999,qty('hp')+QUEST.potions);gainXP(QUEST.xp);closeModal();toast('퀘스트 완료! 숲이 다시 고요해졌어요.','150 골드 · 65 EXP · 홍이슬 병 2개 획득');sfx('quest');burst(player.x,player.y-40,'#f4d98b',35);updateHUD();save();return true;}
+function usePotion(id){
+ if(!started||!['hp','mp','dew'].includes(id)||(modal&&modal!=='inventory'))return false;
+ const it=ITEMS[id];let message='';
+ if(qty(id)<=0)message=it.name+'이 없어요. 미엘의 상점에서 구입하세요.';
+ else if((it.heal&&player.hp>=maxHP())||(it.mana&&player.mp>=maxMP())||(it.full&&player.hp>=maxHP()&&player.mp>=maxMP()))message='이미 충분히 회복된 상태예요.';
+ if(message){if(modal==='inventory')$('dialogMessage').textContent=message;else toast(message);return false;}
+ player.bag[id]--;const oldHP=player.hp,oldMP=player.mp;
+ if(it.heal||it.full)player.hp=it.full?maxHP():Math.min(maxHP(),player.hp+it.heal);
+ if(it.mana||it.full)player.mp=it.full?maxMP():Math.min(maxMP(),player.mp+it.mana);
+ const dh=Math.ceil(player.hp-oldHP),dm=Math.ceil(player.mp-oldMP);message=it.name+' 사용 · '+(dh?'HP +'+dh+' ':'')+(dm?'MP +'+dm:'');
+ sfx('potion');burst(player.x,player.y-28,it.color,16);floating(player.x,player.y-70,dh?'+'+dh:'MP +'+dm,it.color,19);if(modal==='inventory'){inventory();$('dialogMessage').textContent=message;}else toast(message);updateHUD();save();return true;
+}
+function pause(){if(!started)return;if(modal==='pause'){closeModal();return;}if(modal)return;openModal('pause',closeButton+'<div class="eyebrow">TAKE A LITTLE BREATH</div><h2 id="dialogTitle">잠시, 숲의 숨소리를 들어요.</h2><p>게임이 일시정지되었습니다.<br>모험 기록은 자동으로 저장됩니다. 다시 열면 안전한 마을에서 이어집니다.</p><div class="buttons"><button class="secondary" data-action="help">조작법 보기</button><button class="primary" data-action="close">계속 모험하기 · P</button></div>');save();}
+function help(){openModal('help',closeButton+'<div class="eyebrow">A TRAVELER’S GUIDE</div><h2 id="dialogTitle">숲을 여행하는 방법</h2><div class="help-grid"><span><kbd>← →</kbd> 좌우 이동</span><span><kbd>Alt</kbd> 점프 · 사다리에서 뛰기</span><span><kbd>↑ ↓</kbd> 사다리·로프 오르내리기</span><span><kbd>↓ + Alt</kbd> 발판 아래로 내려가기</span><span><kbd>Ctrl</kbd> 가지 검격 · 길게 누르기 가능</span><span><kbd>Shift</kbd> 초승 파동 · MP 18 / 4초</span><span><kbd>↑</kbd> NPC 대화 · 포탈 이동</span><span><kbd>1 / 2</kbd> HP / MP 포션</span><span><kbd>I / Q</kbd> 가방 / 퀘스트</span><span><kbd>P / Esc</kbd> 일시정지 / 창 닫기</span><span><kbd>M</kbd> 효과음 켜기·끄기</span><span><kbd>F</kbd> 전체 화면</span></div><div class="divider"></div><p><b>첫 모험:</b> 오린에게 퀘스트 수락 → 오른쪽 포탈 → 몬스터 8마리 처치 → 오린에게 보상 → 미엘의 상점에서 포션 구매.<br>아이템은 가까이 가면 자동으로 줍습니다. 레벨업하면 HP·MP가 모두 회복됩니다. 쓰러지면 골드 손실 없이 마을로 돌아옵니다.</p><div class="buttons"><button class="primary" data-action="'+(started?'close':'welcome')+'">알겠어요</button></div>',true);}
+function toggleFullscreen(){const el=document.querySelector('.game-frame');if(document.fullscreenElement){document.exitFullscreen?.().catch(()=>{});}else if(el.requestFullscreen){el.requestFullscreen().catch(()=>toast('이 브라우저에서는 전체 화면을 열 수 없어요.'));}}
+function updateHUD(){
+ $('hpFill').style.width=(player.hp/maxHP()*100)+'%';$('mpFill').style.width=(player.mp/maxMP()*100)+'%';$('xpFill').style.width=(player.xp/xpNeeded()*100)+'%';
+ $('hpText').textContent=Math.ceil(player.hp)+' / '+maxHP();$('mpText').textContent=Math.floor(player.mp)+' / '+maxMP();$('xpText').textContent=player.xp+' / '+xpNeeded();$('goldText').textContent=player.gold.toLocaleString('ko-KR');
+ $('levelText').textContent='LV. '+String(player.level).padStart(2,'0')+' · '+(player.level<3?'새싹 여행자':player.level<6?'이슬숲 모험가':'새벽의 수호자');$('hpQty').textContent='홍이슬 × '+qty('hp');$('mpQty').textContent='청이슬 × '+qty('mp');
+ const cooldown=$('skillCooldown');cooldown.style.display=player.skillCd>0?'grid':'none';cooldown.textContent=player.skillCd.toFixed(1);
+ const q=player.quest;$('questCount').textContent=q.state==='new'?'NEW':q.state==='done'?'COMPLETE':q.count+' / '+QUEST.target;$('questTitle').textContent=q.state==='new'?'숲에서 온 작은 부탁':QUEST.name;
+ $('questDesc').textContent=q.state==='new'?'수림지기 오린에게 다가가 ↑로 대화하세요.':q.state==='done'?'숲이 평온해졌어요. 더 높은 곳으로 탐험해 보세요.':q.count>=QUEST.target?'새벽등 마을의 오린에게 돌아가 보상을 받으세요.':'유리이끼 숲의 몬스터를 처치하세요. 종류는 상관없어요.';$('questFill').style.width=(q.count/QUEST.target*100)+'%';
+}
+$('dialog').addEventListener('click',e=>{
+ const button=e.target.closest('button');if(!button||button.disabled)return;initAudio();
+ const a=button.dataset.action;
+ if(button.dataset.buy){buy(button.dataset.buy);return;}
+ if(button.dataset.item){const id=button.dataset.item;if(ITEMS[id].type==='potion')usePotion(id);else $('dialogMessage').textContent=ITEMS[id].desc+' · 판매가 '+ITEMS[id].sell+' 골드';return;}
+ if(a==='close')closeModal();if(a==='begin')begin(false);if(a==='continue')begin(true);if(a==='accept')acceptQuest();if(a==='claim')claimQuest();if(a==='sell')sell();if(a==='help')help();if(a==='welcome')welcome();
+ if(a==='new-confirm')openModal('confirm','<div class="eyebrow">A FRESH START</div><h2 id="dialogTitle">새로운 모험을 시작할까요?</h2><p class="new-game-confirm">이 브라우저에 저장된 이전 모험 기록이 새 기록으로 바뀝니다.</p><div class="buttons"><button class="secondary" data-action="welcome">돌아가기</button><button class="primary" data-action="begin">새로 시작</button></div>');
+});
+$('inventoryBtn').onclick=()=>modal==='inventory'?closeModal():inventory();$('questBtn').onclick=()=>modal==='quest'?closeModal():questWindow();$('pauseBtn').onclick=pause;$('helpBtn').onclick=help;$('soundBtn').onclick=toggleSound;$('fullBtn').onclick=toggleFullscreen;
+$('hpBtn').onclick=()=>{initAudio();usePotion('hp');};$('mpBtn').onclick=()=>{initAudio();usePotion('mp');};$('attackBtn').onclick=()=>{initAudio();attack(false);};$('skillBtn').onclick=()=>{initAudio();attack(true);};
+
+// 05. 입력 — event.code로 한/영 입력 상태와 무관하게 작동합니다.
+const gameKeys=new Set(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','AltLeft','AltRight','ControlLeft','ControlRight','ShiftLeft','ShiftRight','Space','KeyI','KeyQ','KeyP','KeyM','KeyF','Digit1','Digit2','Escape']);
+window.addEventListener('keydown',e=>{
+ if(gameKeys.has(e.code))e.preventDefault();
+ if(e.code==='Tab'&&modal){const items=[...$('dialog').querySelectorAll('button:not(:disabled)')];if(items.length){const at=items.indexOf(document.activeElement),next=e.shiftKey?(at<=0?items.length-1:at-1):(at+1)%items.length;e.preventDefault();items[next].focus();}return;}
+ if(e.repeat){if(!modal)keys.add(e.code);return;}initAudio();
+ if(e.code==='KeyM'){toggleSound();return;}if(e.code==='KeyF'){toggleFullscreen();return;}
+ if(modal){if(e.code==='Escape'){if(started)closeModal();else welcome();}else if((e.code==='KeyI'&&modal==='inventory')||(e.code==='KeyQ'&&modal==='quest')||(e.code==='KeyP'&&modal==='pause'))closeModal();return;}
+ if(!started)return;keys.add(e.code);
+ if(e.code==='AltLeft'||e.code==='AltRight'||e.code==='Space')jump();
+ if(e.code==='ArrowUp')interact();
+ if(e.code==='KeyI')inventory();if(e.code==='KeyQ')questWindow();if(e.code==='KeyP'||e.code==='Escape')pause();if(e.code==='Digit1')usePotion('hp');if(e.code==='Digit2')usePotion('mp');
+});
+window.addEventListener('keyup',e=>{if(gameKeys.has(e.code))e.preventDefault();keys.delete(e.code);});
+window.addEventListener('blur',()=>{keys.clear();if(started&&!modal)pause();});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){keys.clear();save();if(started&&!modal)pause();}lastFrame=0;accumulator=0;});
+window.addEventListener('pagehide',save);
+canvas.addEventListener('pointerdown',()=>{initAudio();canvas.focus({preventScroll:true});});
+
+// 06. 시뮬레이션 — 120 Hz 고정 물리 스텝, 렌더링은 requestAnimationFrame.
+function enterMap(id,x){
+ mapId=id;map=MAPS[id];player.x=x;player.y=GROUND;player.vx=player.vy=0;player.grounded=true;player.climbing=false;player.ladder=null;player.invuln=1.4;keys.clear();
+ camera=clamp(x-W*.4,0,map.width-W);drops=[];particles=[];floats=[];slashes=[];mobs=map.spawns.map((s,i)=>makeMob(s,i));mapFlash=.65;
+ $('mapName').textContent=map.name;$('mapEnglish').textContent=map.english;$('mapSubtitle').textContent=map.subtitle;$('areaType').textContent=map.safe?'SAFE ZONE':'LV. 1 — 5';$('areaHint').textContent=map.safe?'✦ 마을에서는 HP와 MP가 천천히 회복됩니다':'✦ 사다리와 로프를 타면 더 높은 숲을 탐험할 수 있어요';updateHUD();
+}
+function makeMob(s,id){const d=MONSTERS[s.kind],p=map.platforms[s.p];return {...s,id,w:d.w,h:d.h,x:s.x,y:p.y,vx:0,vy:0,hp:d.hp,dir:id%2?1:-1,phase:rand(0,6),timer:rand(.5,2),flash:0,dead:false,respawn:0,hitPush:0,home:s.x};}
+function interact(){
+ if(modal)return;
+ for(const n of map.npcs)if(near(player.x,n.x,78)&&near(player.y,n.y,45)){if(n.id==='orin')questWindow(true);else shop();return;}
+ for(const p of map.portals)if(near(player.x,p.x,62)&&near(player.y,p.y,45)){sfx('portal');enterMap(p.to,p.spawn);toast(map.name+'에 도착했어요.');save();return;}
+}
+function jump(){
+ if(modal||!started)return;
+ if(keys.has('ArrowDown')&&player.grounded&&player.y<GROUND-10){player.dropThrough=.26;player.grounded=false;player.y+=6;player.vy=70;return;}
+ if(player.grounded||player.climbing){player.vy=-560;player.grounded=false;player.climbing=false;player.ladder=null;player.dropThrough=.18;sfx('jump');burst(player.x,player.y,'#dfebc7',7);}
+}
+function attack(skill){
+ if(!started||modal||player.climbing)return false;
+ if(skill){if(player.skillCd>0)return false;if(player.mp<18){toast('초승 파동에 필요한 MP가 부족해요.','청이슬 병(2)을 사용하거나 잠시 회복하세요.');return false;}player.mp-=18;player.skillCd=4;player.skillAnim=.55;player.attackAnim=.38;player.attackCd=.4;}
+ else{if(player.attackCd>0)return false;player.attackCd=.37;player.attackAnim=.28;}
+ sfx(skill?'skill':'attack');slashes.push({x:player.x,y:player.y-28,dir:player.dir,life:skill?.48:.24,max:skill?.48:.24,skill});
+ const range=skill?225:95;let hits=0;
+ for(const mob of mobs){if(mob.dead)continue;const dx=mob.x-player.x,dy=(mob.y-mob.h*.5)-(player.y-28);if(dx*player.dir>=-mob.w*.45&&Math.abs(dx)<range+mob.w*.45&&Math.abs(dy)<(skill?90:49)){
+  const crit=Math.random()<.13,damage=Math.floor((skill?48+player.level*9:17+player.level*5)*rand(.92,1.12)*(crit?1.6:1));
+  mob.hp-=damage;mob.flash=.18;mob.hitPush=player.dir*(skill?210:115);floating(mob.x+rand(-8,8),mob.y-mob.h-12,String(damage)+(crit?'!':''),crit?'#fff1a2':skill?'#caf5ed':'#fff5d9',crit?29:23);burst(mob.x,mob.y-mob.h*.5,skill?'#c3f8e9':'#fff0af',skill?14:7);hits++;if(mob.hp<=0)killMob(mob);
+ }}
+ if(hits){sfx('hit');shake=skill?4:1.5;}updateHUD();return true;
+}
+function gainXP(amount){
+ player.xp+=amount;
+ while(player.xp>=xpNeeded()&&player.level<99){player.xp-=xpNeeded();player.level++;player.hp=maxHP();player.mp=maxMP();player.skillCd=0;floating(player.x,player.y-110,'LEVEL UP','#fff0ae',34,2.3);burst(player.x,player.y-40,'#f8e5a5',44);sfx('level');toast('LEVEL UP!  Lv. '+player.level,'최대 HP·MP와 공격력이 증가하고 모두 회복됐어요.');}
+ if(player.level===99)player.xp=Math.min(player.xp,xpNeeded()-1);
+}
+function killMob(mob){
+ const d=MONSTERS[mob.kind];mob.dead=true;mob.respawn=8;mob.hp=0;player.kills++;
+ gainXP(d.xp);floating(mob.x,mob.y-mob.h-40,'+'+d.xp+' EXP','#d7f0b4',14);
+ if(player.quest.state==='active'&&player.quest.count<QUEST.target){player.quest.count=Math.min(QUEST.target,player.quest.count+1);if(player.quest.count===QUEST.target)toast('몬스터 8마리 처치 완료!','마을의 오린에게 돌아가 보상을 받아 보세요.');}
+ dropLoot(mob.x-9,mob.y-20,'gold',Math.floor(rand(d.gold[0],d.gold[1]+1)));dropLoot(mob.x+12,mob.y-20,d.drop,1);
+ if(Math.random()<.24)dropLoot(mob.x,mob.y-25,Math.random()<.6?'hp':'mp',1);
+ burst(mob.x,mob.y-mob.h*.5,d.color,17);updateHUD();save();
+}
+function dropLoot(x,y,type,amount){drops.push({x,y,baseY:y,vx:rand(-55,55),vy:-rand(130,200),type,amount,life:60,age:0,grounded:false});}
+function hurt(amount,sourceX){
+ if(player.invuln>0||map.safe)return;
+ player.hp=Math.max(0,player.hp-amount);player.invuln=1.05;player.vx=player.x<sourceX?-190:190;player.vy=-190;player.climbing=false;player.grounded=false;
+ floating(player.x,player.y-65,'−'+amount,'#ffc1ac',23);burst(player.x,player.y-27,'#ed9d86',9);sfx('hurt');shake=5;updateHUD();
+ if(player.hp<=0){player.hp=maxHP();player.mp=maxMP();enterMap('town',280);toast('마을의 등불이 당신을 지켜주었어요.','HP·MP가 회복되었습니다. 골드와 아이템은 그대로예요.');save();}
+}
+function physics(dt){
+ const p=player;
+ p.attackCd=Math.max(0,p.attackCd-dt);p.attackAnim=Math.max(0,p.attackAnim-dt);p.skillCd=Math.max(0,p.skillCd-dt);p.skillAnim=Math.max(0,p.skillAnim-dt);p.invuln=Math.max(0,p.invuln-dt);p.dropThrough=Math.max(0,p.dropThrough-dt);
+ const left=keys.has('ArrowLeft'),right=keys.has('ArrowRight'),up=keys.has('ArrowUp'),down=keys.has('ArrowDown');
+ if(left!==right)p.dir=right?1:-1;
+ if((up||down)&&!p.climbing&&p.dropThrough<=0){const ladder=map.ladders.find(l=>near(p.x,l.x,22)&&p.y>=l.top-7&&p.y<=l.bottom+5&&!(up&&p.y<=l.top)&&!(down&&p.y>=l.bottom));if(ladder){p.climbing=true;p.ladder=ladder;p.x=ladder.x;p.vx=p.vy=0;p.grounded=false;}}
+ if(p.climbing){
+  const l=p.ladder;p.x=l.x;p.vx=0;p.vy=0;p.y+=(down?1:up?-1:0)*155*dt;p.walk+=dt*((up||down)?12:0);
+  if(p.y<=l.top){p.y=l.top;p.climbing=false;p.grounded=true;p.ladder=null;}else if(p.y>=l.bottom){p.y=l.bottom;p.climbing=false;p.grounded=true;p.ladder=null;}
+  if(left||right){p.climbing=false;p.ladder=null;p.vx=p.dir*235;p.dropThrough=.16;}
+ }else{
+  const target=(right?1:0)-(left?1:0);const speed=p.attackAnim>0&&p.grounded?130:245;
+  p.vx+=(target*speed-p.vx)*Math.min(1,dt*18);p.x=clamp(p.x+p.vx*dt,20,map.width-20);
+  const previousY=p.y;p.vy+=GRAVITY*dt;p.y+=p.vy*dt;p.grounded=false;
+  if(p.vy>=0){let landing=Infinity;for(const platform of map.platforms){if(!platform.ground&&p.dropThrough>0)continue;if(p.x+p.w*.35>platform.x&&p.x-p.w*.35<platform.x+platform.w&&previousY<=platform.y+1&&p.y>=platform.y)landing=Math.min(landing,platform.y);}if(landing<Infinity){p.y=landing;p.vy=0;p.grounded=true;}}
+  if(p.y>H+130){p.y=GROUND;p.vy=0;p.grounded=true;}
+  if(Math.abs(p.vx)>10&&p.grounded)p.walk+=dt*Math.abs(p.vx)*.065;
+ }
+ if(keys.has('ControlLeft')||keys.has('ControlRight'))attack(false);
+ if((keys.has('ShiftLeft')||keys.has('ShiftRight'))&&p.skillCd<=0&&p.mp>=18)attack(true);
+ p.mp=Math.min(maxMP(),p.mp+dt*(map.safe?5:1.8));if(map.safe)p.hp=Math.min(maxHP(),p.hp+dt*8);
+ camera+=(clamp(p.x-W*.43,0,map.width-W)-camera)*Math.min(1,dt*7);
+}
+function updateMobs(dt){
+ for(const m of mobs){
+  const d=MONSTERS[m.kind],platform=map.platforms[m.p];
+  if(m.dead){m.respawn-=dt;if(m.respawn<=0){Object.assign(m,makeMob({kind:m.kind,x:m.home,p:m.p},m.id));burst(m.x,m.y-15,'#d6ecc4',12);}continue;}
+  m.flash=Math.max(0,m.flash-dt);m.phase+=dt*5;m.timer-=dt;
+  const sameTier=Math.abs(player.y-platform.y)<78;const close=Math.abs(player.x-m.x)<310;
+  if(d.pattern==='chase'&&close&&sameTier)m.dir=player.x>m.x?1:-1;
+  if(d.pattern==='jump'&&m.y>=platform.y&&m.timer<=0){m.vy=-rand(330,410);m.timer=rand(1.5,2.3);if(close&&sameTier)m.dir=player.x>m.x?1:-1;}
+  let speed=d.speed;if(d.pattern==='chase'&&close&&sameTier)speed*=1.45;if(d.pattern==='jump'&&m.y>=platform.y)speed*=.3;
+  const minX=platform.ground?Math.max(345,m.home-(d.pattern==='chase'?280:155)):platform.x+m.w*.5+10;
+  const maxX=platform.ground?Math.min(map.width-40,m.home+(d.pattern==='chase'?280:155)):platform.x+platform.w-m.w*.5-10;
+  m.x+=(m.dir*speed+m.hitPush)*dt;m.hitPush*=Math.max(0,1-dt*7);
+  if(m.x<minX){m.x=minX;m.dir=1;}if(m.x>maxX){m.x=maxX;m.dir=-1;}
+  m.vy+=GRAVITY*dt;m.y+=m.vy*dt;if(m.y>=platform.y){m.y=platform.y;m.vy=0;}
+  if(Math.abs(player.x-m.x)<(player.w+m.w)*.43&&player.y>m.y-m.h+9&&player.y-player.h<m.y-5){hurt(d.damage,m.x);if(map.safe)break;}
+ }
+}
+function updateDrops(dt){
+ for(const d of drops){
+  d.age+=dt;d.life-=dt;
+  if(!d.grounded){const previousY=d.y;d.vy+=900*dt;d.x+=d.vx*dt;d.y+=d.vy*dt;if(d.vy>=0){let land=Infinity;for(const p of map.platforms)if(d.x>=p.x&&d.x<=p.x+p.w&&previousY<=p.y-8&&d.y>=p.y-8)land=Math.min(land,p.y-8);if(land<Infinity){d.y=land;d.baseY=land;d.vx=d.vy=0;d.grounded=true;}}}
+  const dist=Math.hypot(d.x-player.x,d.y-(player.y-23));if(d.age>.3&&dist<115){d.x+=(player.x-d.x)*dt*11;d.y+=(player.y-25-d.y)*dt*11;}
+  if(d.age>.35&&dist<37){d.life=0;if(d.type==='gold'){player.gold+=d.amount;floating(player.x,player.y-38,'+'+d.amount+' G','#f2d18c',12);}else{player.bag[d.type]=Math.min(9999,qty(d.type)+d.amount);toast(ITEMS[d.type].name+' × '+d.amount+' 획득');}sfx('coin');updateHUD();save();}
+ }
+ drops=drops.filter(d=>d.life>0);
+}
+function floating(x,y,text,color,size=20,life=1.05){floats.push({x,y,text,color,size,life,max:life});if(floats.length>80)floats.shift();}
+function burst(x,y,color,n){for(let i=0;i<n;i++){const angle=rand(0,Math.PI*2),speed=rand(25,140);particles.push({x,y,vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed-45,life:rand(.3,.9),color,size:rand(2,5)});}if(particles.length>300)particles.splice(0,particles.length-300);}
+function update(dt){
+ worldTime+=dt;physics(dt);updateMobs(dt);updateDrops(dt);
+ for(const p of particles){p.life-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=100*dt;}particles=particles.filter(p=>p.life>0);
+ for(const f of floats){f.life-=dt;f.y-=dt*43;}floats=floats.filter(f=>f.life>0);
+ for(const s of slashes)s.life-=dt;slashes=slashes.filter(s=>s.life>0);shake=Math.max(0,shake-dt*20);mapFlash=Math.max(0,mapFlash-dt);
+ saveTimer+=dt;if(saveTimer>8){saveTimer=0;save();}uiTimer+=dt;if(uiTimer>.1){uiTimer=0;updateHUD();}
+}
+
+// 07. 그래픽 — Canvas로 직접 그린 오리지널 캐릭터·몬스터·지형·배경.
+function ellipse(c,x,y,rx,ry,color){c.fillStyle=color;c.beginPath();c.ellipse(x,y,rx,ry,0,0,Math.PI*2);c.fill();}
+function poly(c,points,color){c.fillStyle=color;c.beginPath();points.forEach((p,i)=>i?c.lineTo(p[0],p[1]):c.moveTo(p[0],p[1]));c.closePath();c.fill();}
+function round(c,x,y,w,h,r,color){c.fillStyle=color;c.beginPath();c.roundRect(x,y,w,h,r);c.fill();}
+function stroke(c,points,color,width=2){c.strokeStyle=color;c.lineWidth=width;c.lineCap='round';c.beginPath();points.forEach((p,i)=>i?c.lineTo(p[0],p[1]):c.moveTo(p[0],p[1]));c.stroke();}
+function label(c,text,x,y,size=12,color='#fff5d9',align='center'){c.font='600 '+size+'px "Malgun Gothic",system-ui,sans-serif';c.textAlign=align;c.textBaseline='middle';c.fillStyle=color;c.fillText(text,x,y);}
+function seedNoise(n){const x=Math.sin(n*127.1+311.7)*43758.5453;return x-Math.floor(x);}
+function leaf(c,x,y,size,color,rotation=0){c.save();c.translate(x,y);c.rotate(rotation);c.fillStyle=color;c.beginPath();c.moveTo(-size,0);c.quadraticCurveTo(0,-size,size,0);c.quadraticCurveTo(0,size,-size,0);c.fill();c.restore();}
+function tree(c,x,y,scale,shade=0){
+ c.save();c.translate(x,y);c.scale(scale,scale);
+ const trunk=shade?'#486e66':'#556652',branch=shade?'#547e70':'#6d7760';
+ poly(c,[[-19,0],[-11,-159],[-27,-231],[6,-203],[15,-137],[26,0]],trunk);stroke(c,[[2,-70],[47,-161],[84,-204]],branch,12);stroke(c,[[-3,-112],[-51,-173],[-67,-190]],branch,10);stroke(c,[[0,-152],[12,-250]],branch,11);
+ const colors=shade?['#4c8272','#57917b','#609982']:['#2f7660','#42886a','#5d9d71','#79ad7d'];
+ const blobs=[[-67,-210,69,45],[-19,-255,86,57],[61,-234,79,49],[98,-196,49,38],[-76,-172,48,35],[16,-193,100,49],[-3,-281,52,29]];
+ blobs.forEach((b,i)=>ellipse(c,...b,colors[i%colors.length]));
+ if(!shade){leaf(c,-51,-249,18,'#92ba80',-.3);leaf(c,42,-271,23,'#91b779',.2);leaf(c,89,-211,16,'#86b079',-.4);stroke(c,[[-8,-12],[-3,-98]],'#82906a',3);}
+ c.restore();
+}
+const scenery={};
+function buildScenery(id){
+ const bg=document.createElement('canvas');bg.width=W;bg.height=H;const b=bg.getContext('2d');const forest=id==='forest';
+ const sky=b.createLinearGradient(0,0,0,H);sky.addColorStop(0,forest?'#7fafaa':'#94bfb4');sky.addColorStop(.6,forest?'#b8cbb0':'#d3d7b0');sky.addColorStop(1,'#d7d9ac');b.fillStyle=sky;b.fillRect(0,0,W,H);
+ const sun=b.createRadialGradient(865,146,5,865,146,140);sun.addColorStop(0,'#fff4bd88');sun.addColorStop(1,'#fff4bd00');b.fillStyle=sun;b.fillRect(700,0,400,320);ellipse(b,865,146,43,43,'#eff0c785');
+ for(let i=0;i<8;i++){const x=i*230-120;ellipse(b,x,130+Math.sin(i*2)*54,140,19,'#e6ead329');}
+ poly(b,[[0,380],[0,302],[140,198],[278,309],[409,230],[597,328],[750,213],[930,307],[1110,205],[1280,311],[1280,510]],'#87b1a17a');
+ poly(b,[[0,456],[0,366],[180,277],[338,393],[545,291],[690,370],[850,296],[1060,388],[1210,288],[1280,336],[1280,525]],'#78a7958c');
+ for(let i=0;i<18;i++)tree(b,i*88-70,510+seedNoise(i)*35,.65+seedNoise(i+11)*.5,1);
+ const haze=b.createLinearGradient(0,240,0,560);haze.addColorStop(0,'#bed6b500');haze.addColorStop(1,forest?'#96b49bce':'#b4c9a6dd');b.fillStyle=haze;b.fillRect(0,240,W,320);
+ return bg;
+}
+scenery.town=buildScenery('town');scenery.forest=buildScenery('forest');
+function drawBackground(){
+ ctx.drawImage(scenery[mapId],0,0);
+ ctx.save();
+ for(let i=0;i<9;i++){const x=i*240-180-camera*.16;tree(ctx,x,568,.95+(i%3)*.13,1);}
+ ctx.globalAlpha=.13;ctx.fillStyle='#fffbd8';for(let i=0;i<5;i++){const x=300+i*310-camera*.1;poly(ctx,[[x,-30],[x+90,-30],[x-90,560],[x-220,560]],'#fffbd8');}ctx.globalAlpha=1;
+ ctx.restore();
+}
+function grass(c,x,y,width,seed=0){
+ for(let i=0;i<width/15;i++){const px=x+i*15,h=5+seedNoise(i+seed)*10;stroke(c,[[px-3,y],[px,y-h],[px+2,y-2],[px+7,y-h*.7]],i%3?'#689259':'#9bbb72',1.7);}
+}
+function drawPlatform(p,index){
+ const x=p.x-camera,y=p.y,w=p.w;if(x>W+40||x+w<-40)return;
+ if(p.ground){
+  ctx.fillStyle='#596653';ctx.fillRect(x,y,w,H-y);ctx.fillStyle='#768062';ctx.fillRect(x,y+7,w,13);ctx.fillStyle='#8c9870';ctx.fillRect(x,y+4,w,6);
+  for(let i=Math.max(0,Math.floor((camera-p.x)/46));i<w/46&&p.x+i*46-camera<W+50;i++){const sx=x+i*46,n=seedNoise(i+57);ellipse(ctx,sx+20,y+29+n*36,5+n*7,3+n*3,'#a0a08239');stroke(ctx,[[sx+4,y+17],[sx+9,y+26],[sx+3,y+39]],'#4b5b4b55',1.5);}
+  ctx.fillStyle='#a4b878';ctx.fillRect(x,y-5,w,9);ctx.fillStyle='#c4d69a';ctx.fillRect(x,y-5,w,2);grass(ctx,Math.max(x,-10),y-4,Math.min(w,W+30),13);
+ }else{
+  poly(ctx,[[x,y+2],[x+w,y+2],[x+w-13,y+21],[x+w*.75,y+34],[x+w*.6,y+22],[x+40,y+25],[x+10,y+15]],'#677763');
+  ctx.fillStyle='#8b9771';ctx.fillRect(x,y,w,11);round(ctx,x-3,y-6,w+6,10,5,'#9ebd7c');ctx.fillStyle='#c0d49a';ctx.fillRect(x,y-6,w,2);grass(ctx,x+4,y-5,w-8,index*17);
+  for(let i=25;i<w;i+=75){stroke(ctx,[[x+i,y+14],[x+i+2,y+39],[x+i-3,y+52]],'#648764',2);leaf(ctx,x+i-3,y+32,6,'#86a66e',.5);leaf(ctx,x+i+4,y+43,5,'#92ac77',-.5);}
+ }
+}
+function drawLadder(l){
+ const x=l.x-camera;if(x<-20||x>W+20)return;
+ if(l.type==='rope'){stroke(ctx,[[x,l.top-10],[x,l.bottom]],'#a08d60',5);stroke(ctx,[[x-1,l.top-10],[x-1,l.bottom]],'#dac28a',1.5);for(let y=l.top;y<l.bottom;y+=21){stroke(ctx,[[x-4,y],[x+4,y+4]],'#8c7e59',2);}round(ctx,x-9,l.top-9,18,8,2,'#68735b');}
+ else{stroke(ctx,[[x-13,l.top-3],[x-13,l.bottom]],'#756e51',6);stroke(ctx,[[x+13,l.top-3],[x+13,l.bottom]],'#756e51',6);stroke(ctx,[[x-14,l.top-3],[x-14,l.bottom]],'#c1ae7f',2);for(let y=l.top+9;y<l.bottom;y+=18){round(ctx,x-16,y,32,5,2,'#b8a174');ctx.fillStyle='#d4be8a';ctx.fillRect(x-14,y,28,1);}}
+}
+function house(x,y,w,h,variant=0){
+ x-=camera;const wall=variant?'#d7c4a0':'#e4d3ac',roof=variant?'#6c9380':'#5c8276';
+ ellipse(ctx,x+w*.5,y+3,w*.58,10,'#344d3933');round(ctx,x,y-h,w,h,8,wall);ctx.fillStyle='#bdaf89';ctx.fillRect(x,y-12,w,12);
+ for(let i=0;i<5;i++)stroke(ctx,[[x+5,y-h+22+i*22],[x+w-5,y-h+22+i*22]],'#b8ae8b42',1);
+ poly(ctx,[[x-22,y-h+12],[x+w*.47,y-h-85],[x+w+25,y-h+12]],roof);poly(ctx,[[x-26,y-h+12],[x+w*.47,y-h-89],[x+w*.47,y-h-73],[x-12,y-h+18]],'#a4b795');stroke(ctx,[[x+w*.47,y-h-83],[x+w+23,y-h+12]],'#335b53',7);
+ for(let j=0;j<4;j++){const yy=y-h-55+j*18,start=x+w*.47-(j+1)*21;stroke(ctx,[[start,yy],[x+w*.47+(j+1)*25,yy]],'#aac0a142',2);}
+ round(ctx,x+w*.4,y-76,w*.23,76,18,'#6b8170');round(ctx,x+w*.43,y-71,w*.17,70,13,'#3d6058');ellipse(ctx,x+w*.56,y-35,3,3,'#e7ce8a');
+ for(const wx of [x+w*.12,x+w*.72]){round(ctx,wx,y-h+32,31,35,8,'#758d75');round(ctx,wx+4,y-h+36,23,27,5,'#f1dc9b');stroke(ctx,[[wx+15,y-h+36],[wx+15,y-h+63]],'#8e986d',2);stroke(ctx,[[wx+4,y-h+49],[wx+27,y-h+49]],'#8e986d',2);round(ctx,wx-4,y-h+65,39,7,2,'#7a8c66');}
+ if(variant){round(ctx,x+w*.3,y-h+5,w*.42,23,4,'#385b54');label(ctx,'이슬 잡화점',x+w*.51,y-h+16,11,'#f1dba5');}
+}
+function lantern(x,y,small=false){
+ x-=camera;const scale=small?.65:1;ctx.save();ctx.translate(x,y);ctx.scale(scale,scale);
+ stroke(ctx,[[0,0],[0,-116],[22,-116],[27,-108]],'#586e5a',6);stroke(ctx,[[-5,-3],[5,-3]],'#526a56',8);const glow=ctx.createRadialGradient(27,-91,3,27,-91,45);glow.addColorStop(0,'#fff0ad50');glow.addColorStop(1,'#fff0ad00');ctx.fillStyle=glow;ctx.fillRect(-20,-141,95,95);round(ctx,18,-107,18,27,4,'#e6cf8c');stroke(ctx,[[18,-107],[36,-107]],'#55705a',4);stroke(ctx,[[18,-80],[36,-80]],'#55705a',4);ctx.fillStyle='#fff2ba';ctx.fillRect(23,-103,6,18);ctx.restore();
+}
+function drawTown(){
+ tree(ctx,160-camera,560,1.2);tree(ctx,1260-camera,560,1.25);tree(ctx,1770-camera,560,1.45);
+ house(480,560,206,146);house(850,560,260,150,1);
+ const x=185-camera;round(ctx,x,528,143,10,3,'#9b9267');round(ctx,x+13,511,117,9,3,'#baa97a');stroke(ctx,[[x+19,537],[x+19,558]],'#776f51',6);stroke(ctx,[[x+124,537],[x+124,558]],'#776f51',6);
+ for(const lx of [355,736,1180,1480])lantern(lx,560);
+ const sx=1390-camera;stroke(ctx,[[sx,560],[sx,479]],'#7c805b',6);poly(ctx,[[sx-49,475],[sx+37,475],[sx+52,489],[sx+37,503],[sx-49,503]],'#e0cc91');label(ctx,'유리이끼 숲 →',sx,489,10,'#506f58');
+ for(let i=0;i<21;i++){const fx=70+i*83-camera;leaf(ctx,fx,554,8,'#648b62',-.6);ellipse(ctx,fx+2,544,3,3,i%2?'#efda9d':'#dcb7a2');}
+}
+function drawForest(){
+ for(const t of [{x:300,s:1.6},{x:1050,s:1.8},{x:1750,s:1.65},{x:2500,s:1.9},{x:2910,s:1.4}]){const x=t.x-camera;if(x>-260&&x<W+260)tree(ctx,x,560,t.s);}
+ for(let i=0;i<28;i++){const x=180+i*105-camera;if(x<-40||x>W+40)continue;const s=seedNoise(i+30);poly(ctx,[[x-13,556],[x-8,538-s*13],[x+7,533-s*12],[x+19,550],[x+13,560]],'#829e83');leaf(ctx,x-15,552,12,'#639168',-.6);leaf(ctx,x+17,548,9,'#83ab73',.4);if(i%3===0){stroke(ctx,[[x+5,546],[x+5,519]],'#648565',2);ellipse(ctx,x+5,517,6,7,'#e5dfae');ellipse(ctx,x+5,516,3,4,'#fcf0bb');}}
+}
+function drawPortal(p){
+ const x=p.x-camera,y=p.y;ctx.save();ctx.translate(x,y);
+ ellipse(ctx,0,-2,42,9,'#374f4a33');
+ const glow=ctx.createRadialGradient(0,-48,3,0,-48,65);glow.addColorStop(0,'#c5f5db44');glow.addColorStop(1,'#c5f5db00');ctx.fillStyle=glow;ctx.fillRect(-70,-125,140,145);
+ ctx.lineWidth=11;ctx.strokeStyle='#7c9b85';ctx.beginPath();ctx.ellipse(0,-49,33,52,0,Math.PI,Math.PI*2);ctx.stroke();stroke(ctx,[[-33,-49],[-33,-2]],'#789783',11);stroke(ctx,[[33,-49],[33,-2]],'#789783',11);
+ ctx.fillStyle='#6db9b35c';ctx.beginPath();ctx.ellipse(0,-43,27,44,0,0,Math.PI*2);ctx.fill();
+ for(let i=0;i<4;i++){ctx.strokeStyle='#d5f8d9'+['77','55','44','33'][i];ctx.lineWidth=1.5;ctx.beginPath();ctx.ellipse(Math.sin(worldTime*1.7+i)*3,-44,17+i*2,32+i*3,Math.sin(worldTime+i)*.07,0,Math.PI*2);ctx.stroke();}
+ for(let i=0;i<7;i++){const a=worldTime*.6+i*.9;ellipse(ctx,Math.sin(a)*27,-45+Math.cos(a*1.3)*42,2,2,'#f1f8cd');}
+ round(ctx,-39,-8,78,11,3,'#708d79');leaf(ctx,-30,-83,14,'#a8c48b',-.6);leaf(ctx,30,-75,12,'#a0bf84',.8);
+ label(ctx,p.label,0,-126,12,'#f8f7df');ctx.restore();
+}
+function drawHero(c,x,y,scale=1,pose=player,npc=null){
+ c.save();c.translate(x,y);c.scale(scale,scale);c.scale(pose.dir||1,1);
+ const walk=pose.walk||0,moving=!!npc?false:Math.abs(pose.vx)>10&&pose.grounded;
+ const climb=pose.climbing,air=!pose.grounded&&!climb&&!npc,attackPose=pose.attackAnim>0;
+ const bob=moving?Math.sin(walk*2)*1.4:Math.sin(worldTime*2.5)*.7;
+ if(!npc&&pose.invuln>0&&Math.floor(pose.invuln*14)%2===0)c.globalAlpha=.55;
+ const cloak=npc?npc.color:'#3c8678',accent=npc?'#e4d6a9':'#e9c787';
+ ellipse(c,0,0,18,4,'#24483a35');c.translate(0,bob);
+ const step=climb?Math.sin(walk)*5:moving?Math.sin(walk)*7:air?4:0;
+ stroke(c,[[-6,-17],[-7-step,-6],[-7-step,0]],'#354a48',7);stroke(c,[[6,-17],[7+step,-5],[9+step,0]],'#354a48',7);
+ round(c,-13-step,-4,11,6,2,'#41564c');round(c,4+step,-4,12,6,2,'#41564c');
+ poly(c,[[-11,-43],[-18,-18+step*.2],[0,-12],[17,-18],[10,-43]],'#27685e');poly(c,[[-10,-43],[-13,-22],[13,-22],[9,-43]],cloak);stroke(c,[[-9,-24],[12,-24]],'#9b9767',3);round(c,-2,-27,5,6,1,'#e2c78a');
+ const armY=climb?-48:attackPose?-34:-28;
+ stroke(c,[[-10,-39],[-15,-32],[-15,climb?-47:-25]],cloak,7);ellipse(c,-15,climb?-47:-24,4,4,'#e7c6a0');
+ stroke(c,[[10,-39],[15,-33],[attackPose?29:16,armY]],cloak,7);ellipse(c,attackPose?29:16,armY,4,4,'#f0d2ac');
+ if(!npc&&!climb){c.save();c.translate(attackPose?28:16,armY);c.rotate(attackPose?-.25:-.7);poly(c,[[0,4],[5,-4],[8,-28],[4,-38],[-1,-29],[-2,-5]],'#deead1');poly(c,[[2,-4],[4,-33],[4,-6]],'#9ac7b6');stroke(c,[[-6,-1],[9,-1]],'#c1ac72',4);stroke(c,[[1,1],[1,9]],'#75694b',4);c.restore();}
+ round(c,-13,-63,27,25,9,'#f0d0a7');poly(c,[[-15,-53],[-13,-65],[-4,-72],[11,-68],[17,-58],[11,-56],[7,-61],[2,-54],[-4,-60],[-10,-51]],npc?'#77674e':'#e4e8cf');
+ if(npc?.id==='orin'){poly(c,[[-22,-62],[-11,-77],[11,-77],[22,-62]],'#687f5b');round(c,-24,-64,48,5,2,'#9caa7c');leaf(c,9,-78,10,'#d9c68b',-.5);}
+ if(npc?.id==='miel'){round(c,-15,-68,32,10,5,'#d29786');round(c,8,-60,8,25,4,'#847057');ellipse(c,-11,-65,5,5,'#e8cc94');}
+ if(!climb){round(c,5,-53,3,5,1,'#2c4a49');ellipse(c,10,-47,3,2,'#dfab8e');stroke(c,[[7,-43],[10,-43]],'#b58e71',1);}
+ else{poly(c,[[-13,-58],[-12,-44],[12,-44],[14,-58]],npc?'#887454':'#d5dec7');}
+ round(c,-13,-40,28,6,3,accent);poly(c,[[-11,-39],[-25,-31-Math.sin(worldTime*5)*2],[-26,-40],[-10,-43]],accent);
+ if(!npc){leaf(c,-8,-68,8,'#79aa80',-.6);leaf(c,1,-69,6,'#aacb91',.7);}
+ c.restore();
+}
+function drawNPC(n){
+ const x=n.x-camera;if(x<-70||x>W+70)return;drawHero(ctx,x,n.y,1.03,{dir:-1,grounded:true,walk:0},n);
+ round(ctx,x-44,n.y-106,88,21,5,'#244d43d9');label(ctx,n.role+' '+n.name,x,n.y-95,11,'#e9edd1');
+ if(n.id==='orin'&&player.quest.state!=='done'){const done=player.quest.state==='active'&&player.quest.count>=QUEST.target;ellipse(ctx,x,n.y-130+Math.sin(worldTime*3)*3,11,13,done?'#e7d190':'#e8d59a');label(ctx,done?'?':'!',x,n.y-130+Math.sin(worldTime*3)*3,18,'#63764f');}
+}
+function drawMob(m){
+ if(m.dead)return;const x=m.x-camera;if(x<-100||x>W+100)return;const d=MONSTERS[m.kind];
+ ctx.save();ctx.translate(x,m.y);ctx.scale(m.dir,1);ellipse(ctx,0,0,m.w*.47,4,'#314f3d33');
+ if(m.flash>0)ctx.filter='brightness(1.65)';
+ const bob=Math.sin(m.phase)*1.5;
+ if(m.kind==='puff'){
+  stroke(ctx,[[-10,-6],[-12-Math.sin(m.phase*2)*3,-1]],'#667854',4);stroke(ctx,[[10,-6],[12+Math.sin(m.phase*2)*3,-1]],'#667854',4);
+  ellipse(ctx,0,-17+bob,18,14,'#8dab70');ellipse(ctx,1,-21+bob,17,12,'#b5d291');ellipse(ctx,-8,-27+bob,8,6,'#c7db9b');leaf(ctx,-6,-34+bob,13,'#7ba96c',.6);leaf(ctx,5,-36+bob,11,'#a6c980',-.7);round(ctx,7,-23+bob,3,5,1,'#324e44');round(ctx,-1,-23+bob,3,5,1,'#324e44');ellipse(ctx,11,-17+bob,3,2,'#e4c092');
+ }else if(m.kind==='crag'){
+  stroke(ctx,[[-13,-12],[-15-Math.sin(m.phase)*4,-3]],'#5c706c',7);stroke(ctx,[[13,-12],[15+Math.sin(m.phase)*4,-3]],'#5c706c',7);
+  poly(ctx,[[-28,-21],[-21,-43],[-5,-54],[18,-46],[28,-27],[20,-10],[-15,-8]],'#718d8c');poly(ctx,[[-20,-42],[-5,-54],[16,-45],[10,-29],[-10,-28]],'#a5b9a7');poly(ctx,[[-25,-23],[-10,-29],[-6,-12],[-16,-8]],'#8fa591');leaf(ctx,-12,-49,11,'#94b485',-.3);leaf(ctx,-1,-54,8,'#b9cc90',-.8);ellipse(ctx,14,-29,12,11,'#bdc9b2');round(ctx,17,-34,4,5,1,'#38585a');poly(ctx,[[23,-28],[35,-23],[23,-20]],'#d7b37e');stroke(ctx,[[-17,-26],[-8,-20],[-13,-16]],'#bdccb3',2);
+ }else{
+  const crouch=m.y>=map.platforms[m.p].y?Math.sin(m.phase)*2:0;
+  ellipse(ctx,-10,-5,9,5,'#997b5f');ellipse(ctx,10,-5,9,5,'#997b5f');stroke(ctx,[[-7,-17],[-11,-8]],'#d9ab78',5);stroke(ctx,[[7,-17],[12,-8]],'#d9ab78',5);
+  ellipse(ctx,0,-25+crouch,16,18,'#dbab77');ellipse(ctx,1,-27+crouch,14,15,'#efc990');ellipse(ctx,-6,-32+crouch,5,3,'#fae2b1');
+  stroke(ctx,[[-6,-39+crouch],[-12,-54+crouch]],'#a8a371',4);stroke(ctx,[[7,-40+crouch],[13,-55+crouch]],'#a8a371',4);ellipse(ctx,-13,-54+crouch,5,5,'#e5daa5');ellipse(ctx,14,-55+crouch,5,5,'#e5daa5');round(ctx,3,-30+crouch,3,5,1,'#514f40');round(ctx,11,-30+crouch,3,5,1,'#514f40');ellipse(ctx,13,-23+crouch,3,2,'#dca087');poly(ctx,[[-2,-19+crouch],[3,-23+crouch],[7,-18+crouch],[2,-14+crouch]],'#eef1bf');
+ }
+ ctx.filter='none';ctx.restore();
+ if(m.hp<d.hp){round(ctx,x-m.w*.65,m.y-m.h-17,m.w*1.3,5,2,'#294d48b0');round(ctx,x-m.w*.65,m.y-m.h-17,m.w*1.3*(m.hp/d.hp),5,2,'#dfbb82');}
+ if(near(player.x,m.x,200))label(ctx,d.name,x,m.y-m.h-29,10,'#f3f0d4');
+}
+function drawLoot(d){
+ const x=d.x-camera,y=d.y+(d.grounded?Math.sin(worldTime*4+d.x)*3:0);ctx.save();if(d.life<6)ctx.globalAlpha=.4+.6*Math.abs(Math.sin(worldTime*6));
+ if(d.type==='gold'){ellipse(ctx,x,y,6,7,'#a58b4d');ellipse(ctx,x,y-1,5,6,'#edcf88');stroke(ctx,[[x,y-4],[x,y+2]],'#fff0ab',1.5);}
+ else if(['hp','mp','dew'].includes(d.type)){round(ctx,x-5,y-7,10,12,3,'#e1e8cb');round(ctx,x-4,y-4,8,8,2,ITEMS[d.type].color);round(ctx,x-3,y-10,6,4,1,'#a18c60');}
+ else{ctx.translate(x,y);ctx.rotate(Math.sin(worldTime)*.2);poly(ctx,[[0,-8],[6,0],[0,8],[-6,0]],ITEMS[d.type].color);poly(ctx,[[0,-8],[0,5],[-6,0]],'#ffffff55');}
+ ctx.restore();
+}
+function drawSlashes(){
+ for(const s of slashes){const p=1-s.life/s.max;ctx.save();ctx.translate(s.x-camera,s.y);ctx.scale(s.dir,1);ctx.globalAlpha=Math.sin(Math.PI*p)*.9;
+  if(s.skill){const x=38+p*175;ctx.shadowColor='#d5ffe9';ctx.shadowBlur=17;ctx.fillStyle='#d5ffe9';ctx.beginPath();ctx.moveTo(x,-77);ctx.quadraticCurveTo(x+100,0,x,77);ctx.quadraticCurveTo(x+48,0,x,-77);ctx.fill();ctx.shadowBlur=0;stroke(ctx,[[x-38,-20],[x+20,0],[x-38,20]],'#edf7bb',3);}
+  else{ctx.rotate(-.7+p*1.4);ctx.strokeStyle='#fff2b9';ctx.lineWidth=8*(1-p)+2;ctx.beginPath();ctx.arc(0,0,75,-1.1,1.1);ctx.stroke();ctx.strokeStyle='#faffdf';ctx.lineWidth=2;ctx.beginPath();ctx.arc(0,0,83,-.9,.9);ctx.stroke();}
+  ctx.restore();
+ }
+}
+function drawInteraction(){
+ const thing=[...map.npcs,...map.portals].find(n=>near(player.x,n.x,n.to?62:78)&&near(player.y,n.y,45));
+ if(thing){const x=thing.x-camera,y=thing.y-151;round(ctx,x-55,y-12,110,25,5,'#183e37ed');label(ctx,'↑ '+(thing.to?'포탈 이동':'대화하기'),x,y,12,'#f2e5b6');}
+ else if(map.ladders.some(l=>near(player.x,l.x,35)&&player.y>=l.top&&player.y<=l.bottom)){
+  round(ctx,player.x-camera-55,player.y-102,110,23,5,'#183e37df');label(ctx,'↑ ↓ 오르내리기',player.x-camera,player.y-90,11,'#edf0cc');
+ }
+}
+function drawMini(){
+ mini.clearRect(0,0,332,136);const sx=312/map.width,sy=113/640;
+ for(const p of map.platforms){mini.fillStyle=p.ground?'#81a58a':'#729c86';mini.fillRect(10+p.x*sx,7+p.y*sy,Math.max(2,p.w*sx),3);}
+ for(const l of map.ladders){mini.fillStyle='#baab7c';mini.fillRect(10+l.x*sx,7+l.top*sy,2,(l.bottom-l.top)*sy);}
+ for(const p of map.portals){ellipse(mini,10+p.x*sx,7+(p.y-20)*sy,5,7,'#95d4d8');}
+ for(const n of map.npcs)ellipse(mini,10+n.x*sx,7+(n.y-20)*sy,3,3,'#b9d79e');
+ for(const m of mobs)if(!m.dead)ellipse(mini,10+m.x*sx,7+(m.y-15)*sy,2.5,2.5,'#cd9a7b');
+ mini.strokeStyle='#c2dfd52b';mini.lineWidth=1;mini.strokeRect(10+camera*sx,8,W*sx,111);ellipse(mini,10+player.x*sx,7+(player.y-20)*sy,4.5,4.5,'#ffe2a0');ellipse(mini,10+player.x*sx,7+(player.y-20)*sy,2,2,'#fff6d9');
+}
+function render(){
+ ctx.clearRect(0,0,W,H);drawBackground();ctx.save();if(shake>0)ctx.translate(Math.sin(worldTime*80)*shake,Math.cos(worldTime*70)*shake*.5);
+ if(mapId==='town')drawTown();else drawForest();
+ map.platforms.forEach(drawPlatform);for(const l of map.ladders)drawLadder(l);for(const p of map.portals)drawPortal(p);for(const n of map.npcs)drawNPC(n);
+ for(const d of drops)drawLoot(d);for(const m of mobs)drawMob(m);drawHero(ctx,player.x-camera,player.y);drawSlashes();
+ for(const p of particles){ctx.globalAlpha=clamp(p.life*2,0,1);ellipse(ctx,p.x-camera,p.y,p.size,p.size*.7,p.color);}ctx.globalAlpha=1;
+ for(let i=0;i<21;i++){const x=((i*137+Math.sin(worldTime*.3+i)*37-camera*.35)%(W+60)+W+60)%(W+60)-30,y=110+(i*83)%410+Math.sin(worldTime*.7+i)*17;ctx.globalAlpha=.25+Math.sin(worldTime+i)*.2;ellipse(ctx,x,y,2,2,'#faffcd');}ctx.globalAlpha=1;
+ drawInteraction();for(const f of floats){ctx.globalAlpha=Math.min(1,f.life*2);ctx.font='800 '+f.size+'px system-ui,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.lineWidth=3;ctx.strokeStyle='#25453b88';ctx.strokeText(f.text,f.x-camera,f.y);ctx.fillStyle=f.color;ctx.fillText(f.text,f.x-camera,f.y);}ctx.globalAlpha=1;
+ ctx.restore();
+ if(mapFlash>0){ctx.fillStyle='rgba(235,244,211,'+(mapFlash*.45)+')';ctx.fillRect(0,0,W,H);}drawMini();
+}
+
+// 08. 루프 — 긴 탭 중단의 누적 시간을 버리고, 최대 6회 물리 갱신으로 복구.
+function frame(now){
+ const elapsed=lastFrame?Math.min((now-lastFrame)/1000,.05):0;lastFrame=now;
+ if(started&&!modal&&!document.hidden){accumulator+=elapsed;let steps=0;while(accumulator>=FIXED&&steps<6){update(FIXED);accumulator-=FIXED;steps++;}}else{accumulator=0;if(!started)worldTime+=elapsed;}
+ render();frameCount++;fpsElapsed+=elapsed;if(fpsElapsed>=.7){actualFps=Math.round(frameCount/fpsElapsed);$('fps').textContent=String(actualFps);fpsElapsed=frameCount=0;}requestAnimationFrame(frame);
+}
+// 읽기 전용 진단. URL에 ?test=1을 붙인 경우에만 자동화용 명령을 노출합니다.
+function snapshot(){return {started,modal,map:mapId,player:JSON.parse(JSON.stringify(player)),maxHP:maxHP(),maxMP:maxMP(),xpNeeded:xpNeeded(),mobs:JSON.parse(JSON.stringify(mobs)),drops:JSON.parse(JSON.stringify(drops)),fps:actualFps,storageOK};}
+window.DEWBOUND=Object.freeze({snapshot,definitions:{ITEMS,MONSTERS,MAPS,QUEST}});
+if(new URLSearchParams(location.search).has('test'))window.DEWBOUND_TEST={begin,enterMap,interact,attack,jump,update,closeModal,acceptQuest,claimQuest,buy,usePotion,questWindow,shop,save,restore,snapshot,keys,player:()=>player,setPlayer:values=>Object.assign(player,values),setMob:(id,values)=>Object.assign(mobs[id],values)};
+const portrait=$('portrait').getContext('2d');portrait.scale(2,2);drawHero(portrait,28,65,1.05,{dir:1,grounded:true,walk:0});
+updateHUD();updateSoundButton();welcome();requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>회의실 예약 현황</title>
+<style>
+:root {
+  color-scheme: light dark;
+  --bg: #f4f6fa;
+  --surface: #ffffff;
+  --text: #1c2333;
+  --muted: #69718a;
+  --line: #e3e7ef;
+  --line-strong: #c9d0de;
+  --hover: #eef3ff;
+  --past: #f0f2f6;
+  --today: #fffbea;
+  --primary: #2563eb;
+  --danger: #d93025;
+  --shadow: 0 1px 3px rgba(20, 30, 60, .08), 0 6px 20px rgba(20, 30, 60, .06);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #12151c;
+    --surface: #1b1f29;
+    --text: #e7eaf1;
+    --muted: #98a1b3;
+    --line: #2a303d;
+    --line-strong: #3d4557;
+    --hover: #232a3b;
+    --past: #151821;
+    --today: #232214;
+    --primary: #3b6fe0;
+    --danger: #ff7b6e;
+    --shadow: 0 1px 3px rgba(0, 0, 0, .4), 0 6px 20px rgba(0, 0, 0, .3);
+  }
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 14px/1.5 "Pretendard", "Malgun Gothic", "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif;
+}
+.wrap { max-width: 1100px; margin: 0 auto; padding: 24px 16px 40px; }
+
+/* 상단 */
+.top { display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; align-items: flex-end; }
+.top h1 { margin: 0; font-size: 22px; }
+.top p { margin: 4px 0 0; color: var(--muted); }
+.btn {
+  font: inherit;
+  padding: 7px 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+}
+.btn:hover { background: var(--hover); }
+.btn:focus-visible, .tab:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.btn.primary { background: var(--primary); border-color: var(--primary); color: #fff; font-weight: 600; }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn.danger { color: var(--danger); border-color: var(--danger); background: transparent; }
+.io { display: flex; gap: 6px; }
+
+/* 회의실 탭 + 주 이동 */
+.bar { display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; align-items: center; margin: 18px 0 12px; }
+.tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+.tab {
+  display: flex; align-items: center; gap: 8px;
+  font: inherit;
+  padding: 8px 14px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+}
+.tab .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--c); }
+.tab .count { font-size: 12px; color: var(--muted); }
+.tab[aria-pressed="true"] { border-color: var(--c); box-shadow: inset 0 0 0 1px var(--c); font-weight: 600; }
+.weeknav { display: flex; align-items: center; gap: 6px; }
+.weeknav .label { min-width: 190px; text-align: center; font-weight: 600; }
+
+/* 예약 표 */
+.board { background: var(--surface); border-radius: 12px; box-shadow: var(--shadow); overflow-x: auto; }
+table.grid { width: 100%; min-width: 640px; border-collapse: collapse; table-layout: fixed; }
+.grid tr { height: 30px; }
+.grid th, .grid td { padding: 0; position: relative; border-top: 1px solid var(--line); border-left: 1px solid var(--line); }
+.grid thead th {
+  padding: 10px 4px;
+  text-align: center;
+  font-weight: 600;
+  border-top: 0;
+  border-bottom: 2px solid var(--line-strong);
+}
+.grid thead th:first-child { border-left: 0; }
+.grid .corner { width: 64px; }
+.dayhead .dow { margin-right: 6px; }
+.dayhead .dd { color: var(--muted); font-weight: 400; }
+.dayhead.today .dow { color: var(--primary); }
+.dayhead.today .dd { background: var(--primary); color: #fff; border-radius: 999px; padding: 1px 8px; font-weight: 600; }
+.grid .time {
+  width: 64px;
+  padding: 3px 8px;
+  vertical-align: top;
+  text-align: right;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--muted);
+  border-left: 0;
+}
+.grid tr.hour > td, .grid tr.hour > th { border-top-color: var(--line-strong); }
+.grid tr:not(.hour) > td { border-top-style: dashed; }
+.grid td.today { background: var(--today); }
+
+.slot {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  width: 100%; height: 100%;
+  border: 0; padding: 0;
+  background: transparent;
+  color: var(--accent);
+  font: inherit; font-size: 12px; font-weight: 600;
+  cursor: pointer;
+}
+.slot:not(:disabled):hover { background: var(--accent-soft); }
+.slot:not(:disabled):hover::after, .slot:focus-visible::after { content: "+ 예약"; }
+.slot:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.slot:disabled { background: var(--past); cursor: not-allowed; }
+
+.booking {
+  position: absolute; inset: 2px;
+  display: flex; flex-direction: column; gap: 1px;
+  padding: 4px 8px;
+  border: 0; border-left: 4px solid var(--accent); border-radius: 6px;
+  background: var(--accent-soft);
+  color: var(--text);
+  font: inherit; font-size: 12.5px; line-height: 1.35;
+  text-align: left;
+  overflow: hidden;
+  cursor: pointer;
+}
+.booking:hover { box-shadow: inset 0 0 0 1px var(--accent); }
+.booking:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.booking.short { flex-direction: row; align-items: center; gap: 8px; padding: 0 8px; }
+.booking .b-title { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.booking .b-meta { color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.booking.short .b-meta { flex: none; }
+
+.note { margin: 12px 4px 0; color: var(--muted); font-size: 12.5px; }
+
+/* 예약 대화상자 */
+dialog {
+  width: min(440px, calc(100vw - 32px));
+  padding: 0;
+  border: 0;
+  border-top: 4px solid var(--accent, var(--primary));
+  border-radius: 14px;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, .35);
+}
+dialog::backdrop { background: rgba(10, 15, 30, .5); }
+dialog form { padding: 20px 22px 22px; }
+dialog h2 { margin: 0 0 16px; font-size: 18px; }
+.fields { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.fields label { display: flex; flex-direction: column; gap: 4px; font-size: 12.5px; color: var(--muted); }
+.fields .full { grid-column: 1 / -1; }
+.fields input, .fields select {
+  font: inherit; font-size: 14px;
+  padding: 8px 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+}
+.fields input:focus, .fields select:focus { outline: 2px solid var(--primary); outline-offset: -1px; }
+.error { min-height: 20px; margin: 10px 0 0; color: var(--danger); font-size: 13px; }
+.actions { display: flex; gap: 8px; margin-top: 8px; }
+.actions .spacer { flex: 1; }
+
+/* 알림 */
+#toast {
+  position: fixed; left: 50%; bottom: 28px;
+  transform: translate(-50%, 20px);
+  max-width: calc(100vw - 32px);
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: #1c2333; color: #fff;
+  font-size: 13.5px;
+  opacity: 0; pointer-events: none;
+  transition: opacity .2s, transform .2s;
+  z-index: 10;
+}
+#toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+@media (max-width: 640px) {
+  .weeknav .label { min-width: 0; flex: 1; }
+  .weeknav { width: 100%; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>회의실 예약 현황</h1>
+      <p>빈 칸을 클릭하면 예약하고, 예약된 칸을 클릭하면 확인·수정·취소할 수 있습니다.</p>
+    </div>
+    <div class="io">
+      <button class="btn" id="btnExport" type="button">내보내기</button>
+      <button class="btn" id="btnImport" type="button">가져오기</button>
+      <input type="file" id="fileInput" accept=".json,application/json" hidden>
+    </div>
+  </header>
+
+  <div class="bar">
+    <div class="tabs" id="tabs" role="group" aria-label="회의실 선택"></div>
+    <div class="weeknav">
+      <button class="btn" id="prevWeek" type="button" aria-label="이전 주">◀</button>
+      <span class="label" id="weekLabel" aria-live="polite"></span>
+      <button class="btn" id="nextWeek" type="button" aria-label="다음 주">▶</button>
+      <button class="btn" id="thisWeek" type="button">이번 주</button>
+    </div>
+  </div>
+
+  <main class="board">
+    <table class="grid" id="grid"></table>
+  </main>
+
+  <p class="note">예약 내용은 이 브라우저에만 저장됩니다. 다른 PC와 공유하려면 ‘내보내기’한 파일을 상대방이 ‘가져오기’ 하세요.</p>
+</div>
+
+<dialog id="dlg">
+  <form id="form" novalidate>
+    <h2 id="dlgTitle">회의실 예약</h2>
+    <div class="fields">
+      <label>회의실 <select id="fRoom"></select></label>
+      <label>날짜 <input type="date" id="fDate" required></label>
+      <label>시작 <select id="fStart"></select></label>
+      <label>종료 <select id="fEnd"></select></label>
+      <label class="full">예약자 <input id="fName" maxlength="20" autocomplete="off" required></label>
+      <label class="full">회의 제목(용도) <input id="fTitle" maxlength="40" autocomplete="off" required></label>
+    </div>
+    <p class="error" id="formError" role="alert"></p>
+    <div class="actions">
+      <button class="btn danger" id="btnDelete" type="button">예약 취소</button>
+      <span class="spacer"></span>
+      <button class="btn" id="btnClose" type="button">닫기</button>
+      <button class="btn primary" id="btnSubmit" type="submit">예약하기</button>
+    </div>
+  </form>
+</dialog>
+
+<div id="toast" role="status"></div>
+
+<script>
+(() => {
+'use strict';
+
+/* ===== 설정 ===== */
+const ROOMS = [
+  { id: 'large',  name: '대회의실',  color: '#2563eb' },
+  { id: 'small1', name: '소회의실1', color: '#059669' },
+  { id: 'small2', name: '소회의실2', color: '#d97706' },
+];
+const DAY_START = 9 * 60;    // 09:00
+const DAY_END   = 18 * 60;   // 18:00
+const STEP      = 30;        // 분 단위 (60의 약수)
+const SHOW_DAYS = 5;         // 월~금
+const STORAGE_KEY = 'meetingRoomBookings.v1';
+const NAME_KEY    = 'meetingRoomBookings.lastName';
+const DOW = ['일', '월', '화', '수', '목', '금', '토'];
+
+/* ===== 유틸 ===== */
+const $ = id => document.getElementById(id);
+const pad = n => String(n).padStart(2, '0');
+const fmtDate = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const parseDate = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+const addDays = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+const mondayOf = d => addDays(d, -((d.getDay() + 6) % 7));
+const fmtTime = m => `${pad(Math.floor(m / 60))}:${pad(m % 60)}`;
+const toMin = t => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
+const at = (dateStr, min) => { const d = parseDate(dateStr); d.setMinutes(min); return d; };
+const overlaps = (a, b) => toMin(a.start) < toMin(b.end) && toMin(b.start) < toMin(a.end);
+const roomOf = id => ROOMS.find(r => r.id === id);
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+// 주말에는 다음 주를 먼저 보여준다
+const defaultWeek = () => { const t = new Date(); return mondayOf([0, 6].includes(t.getDay()) ? addDays(t, 7) : t); };
+
+function el(tag, attrs = {}, ...kids) {
+  const n = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (v === false || v == null) continue;
+    if (k.startsWith('on')) n.addEventListener(k.slice(2), v);
+    else if (k === 'class') n.className = v;
+    else n.setAttribute(k, v === true ? '' : v);
+  }
+  n.append(...kids);
+  return n;
+}
+
+let toastTimer;
+function toast(msg) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+/* ===== 저장소 ===== */
+// 외부(가져오기 파일, 저장된 값)에서 온 데이터를 검증해 깨끗한 예약 객체로 만든다
+function normalize(r) {
+  if (!r || typeof r !== 'object' || !roomOf(r.room)) return null;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(r.date) || fmtDate(parseDate(r.date)) !== r.date) return null;
+  if (!/^\d{2}:\d{2}$/.test(r.start) || !/^\d{2}:\d{2}$/.test(r.end)) return null;
+  const s = toMin(r.start), e = toMin(r.end);
+  if (s < DAY_START || e > DAY_END || s >= e || s % STEP || e % STEP) return null;
+  const name = String(r.name ?? '').trim().slice(0, 20);
+  const title = String(r.title ?? '').trim().slice(0, 40);
+  if (!name || !title) return null;
+  return { id: String(r.id || uid()), room: r.room, date: r.date, start: r.start, end: r.end, name, title };
+}
+
+function load() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    return Array.isArray(raw) ? raw.map(normalize).filter(Boolean) : [];
+  } catch { return []; }
+}
+
+function save() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(bookings)); }
+  catch { toast('이 브라우저에서는 저장할 수 없어 새로고침하면 변경 내용이 사라집니다.'); }
+}
+
+function lastName() {
+  try { return localStorage.getItem(NAME_KEY) || ''; } catch { return ''; }
+}
+
+/* ===== 상태 ===== */
+let bookings = load();
+const state = { room: ROOMS[0].id, weekStart: defaultWeek() };
+const weekDates = () => Array.from({ length: SHOW_DAYS }, (_, i) => addDays(state.weekStart, i));
+
+/* ===== 화면: 탭 / 주 이동 ===== */
+const tabBtns = ROOMS.map(r => {
+  const count = el('span', { class: 'count' });
+  const btn = el('button', {
+    class: 'tab', type: 'button', style: `--c:${r.color}`,
+    onclick: () => { state.room = r.id; render(); },
+  }, el('span', { class: 'dot' }), r.name, count);
+  $('tabs').append(btn);
+  return { r, btn, count };
+});
+
+function renderTabs() {
+  const days = new Set(weekDates().map(fmtDate));
+  for (const { r, btn, count } of tabBtns) {
+    btn.setAttribute('aria-pressed', String(r.id === state.room));
+    count.textContent = `${bookings.filter(b => b.room === r.id && days.has(b.date)).length}건`;
+  }
+}
+
+function renderWeekLabel() {
+  const a = state.weekStart, b = addDays(a, SHOW_DAYS - 1);
+  const head = `${a.getFullYear()}년 ${a.getMonth() + 1}월 ${a.getDate()}일`;
+  const tail = (b.getFullYear() !== a.getFullYear() ? `${b.getFullYear()}년 ` : '') + `${b.getMonth() + 1}월 ${b.getDate()}일`;
+  $('weekLabel').textContent = `${head} ~ ${tail}`;
+}
+
+const shiftWeek = n => { state.weekStart = addDays(state.weekStart, 7 * n); render(); };
+$('prevWeek').addEventListener('click', () => shiftWeek(-1));
+$('nextWeek').addEventListener('click', () => shiftWeek(1));
+$('thisWeek').addEventListener('click', () => { state.weekStart = defaultWeek(); render(); });
+
+/* ===== 화면: 예약 표 ===== */
+function bookingCell(b, isToday) {
+  const rows = (toMin(b.end) - toMin(b.start)) / STEP;
+  const range = `${b.start}–${b.end}`;
+  return el('td', { rowspan: rows, class: isToday ? 'today' : '' },
+    el('button', {
+      class: 'booking' + (rows === 1 ? ' short' : ''), type: 'button',
+      title: `${b.title}\n${b.name} · ${range}`,
+      onclick: () => openEdit(b.id),
+    },
+      el('span', { class: 'b-title' }, b.title),
+      el('span', { class: 'b-meta' }, rows === 1 ? b.name : `${b.name} · ${range}`)));
+}
+
+function renderTable() {
+  const room = roomOf(state.room);
+  const days = weekDates();
+  const todayStr = fmtDate(new Date());
+  const now = new Date();
+  const perDay = days.map(d => bookings.filter(b => b.room === room.id && b.date === fmtDate(d)));
+
+  const thead = el('thead', {}, el('tr', {},
+    el('th', { class: 'corner' }),
+    ...days.map(d => el('th', { scope: 'col', class: 'dayhead' + (fmtDate(d) === todayStr ? ' today' : '') },
+      el('span', { class: 'dow' }, DOW[d.getDay()]),
+      el('span', { class: 'dd' }, `${d.getMonth() + 1}/${d.getDate()}`)))));
+
+  const tbody = el('tbody');
+  for (let m = DAY_START; m < DAY_END; m += STEP) {
+    const tr = el('tr', { class: m % 60 === 0 ? 'hour' : '' });
+    if (m % 60 === 0) tr.append(el('th', { scope: 'row', class: 'time', rowspan: 60 / STEP }, fmtTime(m)));
+    days.forEach((d, i) => {
+      const ds = fmtDate(d);
+      const isToday = ds === todayStr;
+      const b = perDay[i].find(x => toMin(x.start) <= m && m < toMin(x.end));
+      if (b) {   // 예약 블록이 이 칸을 덮고 있으면 시작 칸에서만 그린다 (rowspan)
+        if (toMin(b.start) === m) tr.append(bookingCell(b, isToday));
+        return;
+      }
+      tr.append(el('td', { class: isToday ? 'today' : '' },
+        el('button', {
+          class: 'slot', type: 'button',
+          disabled: at(ds, m + STEP) <= now,
+          'aria-label': `${d.getMonth() + 1}월 ${d.getDate()}일 ${DOW[d.getDay()]}요일 ${fmtTime(m)} 예약`,
+          onclick: () => openCreate(room.id, ds, m),
+        })));
+    });
+    tbody.append(tr);
+  }
+
+  const grid = $('grid');
+  grid.style.setProperty('--accent', room.color);
+  grid.style.setProperty('--accent-soft', room.color + '29');
+  grid.setAttribute('aria-label', `${room.name} 주간 예약 현황`);
+  grid.replaceChildren(thead, tbody);
+}
+
+function render() {
+  renderTabs();
+  renderWeekLabel();
+  renderTable();
+}
+
+/* ===== 예약 대화상자 ===== */
+const dlg = $('dlg'), fRoom = $('fRoom'), fDate = $('fDate'), fStart = $('fStart'),
+      fEnd = $('fEnd'), fName = $('fName'), fTitle = $('fTitle'), errBox = $('formError');
+let editingId = null;
+
+ROOMS.forEach(r => fRoom.append(new Option(r.name, r.id)));
+for (let m = DAY_START; m < DAY_END; m += STEP) fStart.append(new Option(fmtTime(m), fmtTime(m)));
+for (let m = DAY_START + STEP; m <= DAY_END; m += STEP) fEnd.append(new Option(fmtTime(m), fmtTime(m)));
+
+// 종료 시간은 시작보다 늦은 값만 선택 가능
+function syncEnd(preferred) {
+  const s = toMin(fStart.value);
+  for (const o of fEnd.options) o.disabled = toMin(o.value) <= s;
+  const want = preferred ?? fEnd.value;
+  fEnd.value = toMin(want) > s ? want : fmtTime(Math.min(s + 60, DAY_END));
+}
+const syncAccent = () => dlg.style.setProperty('--accent', roomOf(fRoom.value).color);
+fStart.addEventListener('change', () => syncEnd());
+fRoom.addEventListener('change', syncAccent);
+
+function openDialog(b, id) {
+  editingId = id;
+  $('dlgTitle').textContent = id ? '예약 확인 / 수정' : '회의실 예약';
+  $('btnSubmit').textContent = id ? '수정 저장' : '예약하기';
+  $('btnDelete').hidden = !id;
+  fRoom.value = b.room;
+  fDate.value = b.date;
+  fStart.value = b.start;
+  syncEnd(b.end);
+  fName.value = b.name;
+  fTitle.value = b.title;
+  errBox.textContent = '';
+  syncAccent();
+  dlg.showModal();
+  (fName.value ? fTitle : fName).focus();
+}
+
+function openCreate(roomId, date, startMin) {
+  openDialog({
+    room: roomId, date,
+    start: fmtTime(startMin), end: fmtTime(Math.min(startMin + 60, DAY_END)),
+    name: lastName(), title: '',
+  }, null);
+}
+
+function openEdit(id) {
+  const b = bookings.find(x => x.id === id);
+  if (b) openDialog(b, id);
+}
+
+// 문제가 있으면 안내 문구를, 없으면 null을 돌려준다
+function validate(d) {
+  if (!d.name) return '예약자 이름을 입력하세요.';
+  if (!d.title) return '회의 제목(용도)을 입력하세요.';
+  if (!d.date || isNaN(parseDate(d.date))) return '날짜를 선택하세요.';
+  if ((parseDate(d.date).getDay() + 6) % 7 >= SHOW_DAYS) return '월~금 평일만 예약할 수 있습니다.';
+  if (toMin(d.end) <= toMin(d.start)) return '종료 시간이 시작 시간보다 늦어야 합니다.';
+  if (!editingId && at(d.date, toMin(d.end)) <= new Date()) return '이미 지난 시간에는 예약할 수 없습니다.';
+  const clash = bookings.find(o => o.id !== editingId && o.room === d.room && o.date === d.date && overlaps(o, d));
+  if (clash) return `이미 예약되어 있습니다: ${clash.start}–${clash.end} ${clash.title} (${clash.name})`;
+  return null;
+}
+
+$('form').addEventListener('submit', e => {
+  e.preventDefault();
+  const data = {
+    room: fRoom.value, date: fDate.value, start: fStart.value, end: fEnd.value,
+    name: fName.value.trim(), title: fTitle.value.trim(),
+  };
+  const err = validate(data);
+  if (err) { errBox.textContent = err; return; }
+
+  if (editingId) Object.assign(bookings.find(b => b.id === editingId), data);
+  else bookings.push({ id: uid(), ...data });
+  save();
+  try { localStorage.setItem(NAME_KEY, data.name); } catch { /* 이름 기억은 선택 기능 */ }
+
+  state.room = data.room;
+  state.weekStart = mondayOf(parseDate(data.date));
+  dlg.close();
+  render();
+  toast(editingId ? '예약을 수정했습니다.' : '예약되었습니다.');
+});
+
+$('btnDelete').addEventListener('click', () => {
+  const b = bookings.find(x => x.id === editingId);
+  if (!b || !confirm(`‘${b.title}’ (${b.name}, ${b.start}–${b.end}) 예약을 취소할까요?`)) return;
+  bookings = bookings.filter(x => x.id !== editingId);
+  save();
+  dlg.close();
+  render();
+  toast('예약을 취소했습니다.');
+});
+
+$('btnClose').addEventListener('click', () => dlg.close());
+
+// 바깥(배경) 클릭으로 닫기 — 입력창에서 드래그하다 바깥에서 놓은 경우는 제외
+let downOnBackdrop = false;
+dlg.addEventListener('pointerdown', e => { downOnBackdrop = e.target === dlg; });
+dlg.addEventListener('click', e => { if (e.target === dlg && downOnBackdrop) dlg.close(); });
+
+/* ===== 내보내기 / 가져오기 ===== */
+$('btnExport').addEventListener('click', () => {
+  const blob = new Blob([JSON.stringify(bookings, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = el('a', { href: url, download: `회의실예약_${fmtDate(new Date()).replace(/-/g, '')}.json` });
+  document.body.append(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+});
+
+$('btnImport').addEventListener('click', () => $('fileInput').click());
+
+$('fileInput').addEventListener('change', async e => {
+  const file = e.target.files[0];
+  e.target.value = '';
+  if (!file) return;
+  try {
+    const data = JSON.parse(await file.text());
+    if (!Array.isArray(data)) throw new Error('not an array');
+    let added = 0, skipped = 0;
+    for (const raw of data) {
+      const b = normalize(raw);
+      const dup = b && bookings.some(o => o.id === b.id || (o.room === b.room && o.date === b.date && overlaps(o, b)));
+      if (!b || dup) { skipped++; continue; }
+      bookings.push(b);
+      added++;
+    }
+    save();
+    render();
+    toast(`${added}건 추가${skipped ? `, ${skipped}건 제외(이미 있거나 시간이 겹침)` : ''}`);
+  } catch {
+    toast('가져올 수 없는 파일입니다. ‘내보내기’로 만든 파일을 선택하세요.');
+  }
+});
+
+/* ===== 시작 ===== */
+// 다른 탭에서 바꾼 내용 반영, 지난 시간 칸 자동 갱신
+window.addEventListener('storage', e => { if (e.key === STORAGE_KEY) { bookings = load(); render(); } });
+setInterval(() => { if (!dlg.open) renderTable(); }, 60000);
+render();
+})();
+</script>
+</body>
+</html>

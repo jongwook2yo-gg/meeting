@@ -1,0 +1,2287 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VIBE-2 로켓 발사 시뮬레이터</title>
+<style>
+  :root {
+    --panel: rgba(7, 13, 24, 0.66);
+    --line: rgba(150, 185, 255, 0.16);
+    --ink: #e9eef7;
+    --ink2: #a3b3ca;
+    --ink3: #6f8199;
+    --accent: #5ad1ff;
+    --amber: #ffb547;
+    --good: #4ade80;
+    --bad: #ff6b6b;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #000; color: var(--ink);
+    font-family: "Segoe UI", "Malgun Gothic", "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif; }
+  canvas#view { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; }
+  canvas#view.dragging { cursor: grabbing; }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); box-shadow: 0 6px 24px rgba(0,0,0,0.35); }
+  .col { position: fixed; top: 16px; bottom: 76px; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
+  .col > .panel { pointer-events: auto; flex: 0 0 auto; }
+  #leftCol { left: 16px; width: 252px; }
+  #rightCol { right: 16px; width: 248px; }
+
+  #title { padding: 10px 14px; }
+  #title .t1 { font-size: 15px; font-weight: 700; letter-spacing: 0.2px; }
+  #title .t2 { font-size: 11.5px; color: var(--ink2); margin-top: 2px; }
+
+  #telemetry { padding: 12px 14px 12px; }
+  #telemetry .row { display: flex; justify-content: space-between; align-items: baseline; padding: 5px 0;
+    border-bottom: 1px solid rgba(150,185,255,0.08); }
+  #telemetry .row:last-of-type { border-bottom: none; }
+  #telemetry .lbl { font-size: 12px; color: var(--ink2); }
+  #telemetry .val b { font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  #telemetry .val i { font-style: normal; font-size: 11.5px; color: var(--ink3); margin-left: 4px; }
+  #telemetry .val.time b { font-size: 22px; color: var(--accent); }
+  .phaseTag { font-size: 13px; font-weight: 700; padding: 3px 10px; border-radius: 999px;
+    background: rgba(90, 209, 255, 0.14); color: var(--accent); border: 1px solid rgba(90,209,255,0.35); }
+  .phaseTag.warn { background: rgba(255,181,71,0.14); color: var(--amber); border-color: rgba(255,181,71,0.4); }
+  .phaseTag.ok { background: rgba(74,222,128,0.14); color: var(--good); border-color: rgba(74,222,128,0.4); }
+  .phaseTag.bad { background: rgba(255,107,107,0.14); color: var(--bad); border-color: rgba(255,107,107,0.4); }
+  .fuelbars { margin-top: 6px; }
+  .fb { display: grid; grid-template-columns: 28px 1fr 44px; align-items: center; gap: 8px; font-size: 11.5px; color: var(--ink2); margin-top: 5px; }
+  .fb em { font-style: normal; text-align: right; font-variant-numeric: tabular-nums; color: var(--ink); }
+  .bar { height: 8px; border-radius: 4px; background: rgba(150,185,255,0.12); overflow: hidden; }
+  .bar .fill { height: 100%; width: 100%; border-radius: 4px; background: var(--accent); transition: width 0.12s linear; }
+  .bar .fill.low { background: var(--amber); }
+  .fb.inactive { opacity: 0.45; }
+
+  #details { padding: 10px 14px; }
+  .ptitle { font-size: 12px; font-weight: 700; color: var(--ink); margin-bottom: 6px; display: flex; justify-content: space-between; gap: 8px; }
+  .ptitle span { font-weight: 400; color: var(--ink3); }
+  .drow { display: flex; justify-content: space-between; font-size: 12.5px; padding: 3px 0; color: var(--ink2); }
+  .drow b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .drow.sub { border-top: 1px solid rgba(150,185,255,0.08); margin-top: 4px; padding-top: 6px; }
+
+  #profile { padding: 10px 12px 8px; }
+  #chart { width: 100%; height: 150px; display: block; cursor: crosshair; }
+
+  #events { padding: 10px 14px; overflow: hidden; flex: 0 1 auto !important; min-height: 0; }
+  #eventList { list-style: none; margin: 0; padding: 0; font-size: 12px; }
+  #eventList li { display: flex; gap: 10px; padding: 2.5px 0; color: var(--ink2); }
+  #eventList li b { font-weight: 600; color: var(--ink3); font-variant-numeric: tabular-nums; min-width: 58px; }
+  #eventList li.new { color: var(--ink); }
+  #eventList li.empty { color: var(--ink3); }
+
+  #controls { position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); display: flex; align-items: center; gap: 8px; padding: 8px 10px; flex-wrap: nowrap; }
+  #controls .sep { width: 1px; height: 26px; background: var(--line); margin: 0 2px; }
+  #controls .group { display: flex; align-items: center; gap: 4px; }
+  #controls .group > span { font-size: 11.5px; color: var(--ink3); margin: 0 4px 0 2px; white-space: nowrap; }
+  button { font: inherit; font-size: 13px; color: var(--ink); background: rgba(150,185,255,0.08);
+    border: 1px solid var(--line); border-radius: 8px; padding: 7px 12px; cursor: pointer; white-space: nowrap;
+    transition: background 0.15s, border-color 0.15s, opacity 0.15s; }
+  button:hover { background: rgba(150,185,255,0.16); }
+  button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  button.on { background: rgba(90,209,255,0.2); border-color: rgba(90,209,255,0.6); color: #fff; }
+  button.primary { background: linear-gradient(180deg, #ff8a3d, #e5531a); border-color: #ff9a5c; font-weight: 700; padding: 7px 16px; }
+  button.primary:hover { background: linear-gradient(180deg, #ff9a52, #ef5f24); }
+  button:disabled { opacity: 0.38; cursor: not-allowed; }
+
+  #banner { position: fixed; left: 50%; top: 13%; transform: translate(-50%, -8px); text-align: center; pointer-events: none;
+    width: max-content; max-width: min(640px, calc(100vw - 580px));
+    opacity: 0; transition: opacity 0.35s, transform 0.35s; text-shadow: 0 2px 18px rgba(0,0,0,0.85), 0 0 2px rgba(0,0,0,0.9); }
+  #banner.show { opacity: 1; transform: translate(-50%, 0); }
+  #bannerMain { font-size: 34px; font-weight: 800; letter-spacing: 0.5px; }
+  #bannerSub { font-size: 15px; color: #d6e2f3; margin-top: 4px; }
+  #banner.count #bannerMain { font-size: 64px; color: var(--amber); }
+  #banner.good #bannerMain { color: var(--good); }
+  #banner.warn #bannerMain { color: var(--amber); }
+
+  #hint { position: fixed; right: 16px; bottom: 20px; font-size: 11.5px; color: var(--ink3); text-align: right; max-width: 300px; line-height: 1.5; pointer-events: none; }
+  #labels { position: fixed; inset: 0; pointer-events: none; overflow: hidden; }
+  .tag { position: absolute; left: 0; top: 0; font-size: 11px; font-weight: 600; color: var(--ink); white-space: nowrap;
+    padding: 2px 7px; border-radius: 6px; background: rgba(7,13,24,0.7); border: 1px solid var(--line); transform: translate(-50%, -130%); }
+  .tag::after { content: ""; position: absolute; left: 50%; bottom: -7px; width: 1px; height: 6px; background: var(--ink2); }
+  .tag .dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); margin-right: 5px; vertical-align: 1px; }
+  .tag.s1 .dot { background: var(--amber); }
+
+  #loading { position: fixed; inset: 0; z-index: 50; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 16px; background: radial-gradient(ellipse at center, #0b1630 0%, #02040a 70%); transition: opacity 0.6s; }
+  #loading.hide { opacity: 0; pointer-events: none; }
+  .spinner { width: 42px; height: 42px; border-radius: 50%; border: 3px solid rgba(90,209,255,0.18); border-top-color: var(--accent); animation: spin 0.9s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #loadMsg { font-size: 14px; color: var(--ink2); text-align: center; line-height: 1.6; max-width: 520px; padding: 0 20px; }
+
+  @media (max-height: 560px) { #profile { display: none; } }
+  @media (max-width: 1200px) { #hint { display: none; } }
+  @media (max-width: 1150px) { #banner { top: auto; bottom: 88px; max-width: 92vw; } }
+  @media (max-width: 980px) {
+    #profile, #events { display: none; }
+    #rightCol { width: 210px; }
+  }
+  @media (max-width: 720px) {
+    #rightCol, #hint, #title .t2 { display: none; }
+    #leftCol { width: 206px; }
+    #title .t1 { font-size: 13px; }
+    #telemetry { padding: 8px 10px; }
+    .phaseTag { font-size: 11.5px; padding: 2px 8px; white-space: nowrap; }
+    #banner { bottom: 104px; }
+    #bannerSub { font-size: 13px; }
+    #telemetry .val b { font-size: 16px; }
+    #controls { left: 8px; right: 8px; transform: none; flex-wrap: wrap; justify-content: center; bottom: 8px; }
+    #controls .sep { display: none; }
+    button { padding: 6px 9px; font-size: 12px; }
+    #bannerMain { font-size: 24px; }
+  }
+</style>
+</head>
+<body>
+<canvas id="view"></canvas>
+<div id="labels"></div>
+
+<div id="leftCol" class="col">
+<header id="title" class="panel">
+  <div class="t1">VIBE-2 로켓 발사 시뮬레이터</div>
+  <div class="t2">2단 액체로켓 · 목표 250 km 원궤도</div>
+</header>
+
+<section id="telemetry" class="panel" aria-label="주요 비행 데이터">
+  <div class="row"><span class="lbl">현재 단계</span><span id="hudPhase" class="phaseTag">발사 대기</span></div>
+  <div class="row"><span class="lbl">경과 시간</span><span class="val time"><b id="hudTime">T−00:03</b></span></div>
+  <div class="row"><span class="lbl">고도</span><span class="val"><b id="hudAlt">0.00</b><i>km</i></span></div>
+  <div class="row"><span class="lbl">속도</span><span class="val"><b id="hudVel">0</b><i>km/h</i></span></div>
+  <div class="row"><span class="lbl">마하</span><span class="val"><b id="hudMach">0.00</b></span></div>
+  <div class="row"><span class="lbl">남은 연료</span><span class="val"><b id="hudFuel">100.0</b><i>%</i></span></div>
+  <div class="fuelbars">
+    <div class="fb" id="fb1"><span>1단</span><div class="bar"><div id="fuel1" class="fill"></div></div><em id="fuel1t">100%</em></div>
+    <div class="fb inactive" id="fb2"><span>2단</span><div class="bar"><div id="fuel2" class="fill"></div></div><em id="fuel2t">100%</em></div>
+  </div>
+</section>
+
+<section id="events" class="panel" aria-label="이벤트 로그">
+  <div class="ptitle">이벤트 로그</div>
+  <ol id="eventList"><li class="empty">발사 버튼을 누르면 기록됩니다</li></ol>
+</section>
+</div>
+
+<div id="rightCol" class="col">
+<section id="details" class="panel" aria-label="상세 데이터">
+  <div class="ptitle">상세 데이터</div>
+  <div class="drow"><span>가속도</span><b id="dAcc">0.00 G</b></div>
+  <div class="drow"><span>동압 (Q)</span><b id="dQ">0.0 kPa</b></div>
+  <div class="drow"><span>추력</span><b id="dThr">0 kN</b></div>
+  <div class="drow"><span>질량</span><b id="dMass">0.0 t</b></div>
+  <div class="drow"><span>수직 / 수평 속도</span><b id="dVrh">0 / 0 m/s</b></div>
+  <div class="drow"><span>하방거리</span><b id="dDown">0.0 km</b></div>
+  <div class="drow sub"><span>원지점 고도</span><b id="dApo">—</b></div>
+  <div class="drow"><span>근지점 고도</span><b id="dPeri">—</b></div>
+  <div class="drow"><span>궤도 주기</span><b id="dPer">—</b></div>
+  <div class="drow"><span>궤도 경사각</span><b id="dInc">—</b></div>
+</section>
+
+<section id="profile" class="panel" aria-label="비행 프로파일 차트">
+  <div class="ptitle">비행 프로파일 <span>고도 vs 하방거리 (km)</span></div>
+  <canvas id="chart"></canvas>
+</section>
+</div>
+
+<div id="banner"><div id="bannerMain"></div><div id="bannerSub"></div></div>
+
+<nav id="controls" class="panel" aria-label="조작">
+  <button id="btnLaunch" class="primary" title="발사 (Space)">🚀 발사</button>
+  <button id="btnReset" title="리셋 (R)">↺ 리셋</button>
+  <div class="sep"></div>
+  <div class="group"><span>배속</span>
+    <button data-warp="1" class="on" title="1배속 (1)">1x</button><button data-warp="10" title="10배속 (2)">10x</button><button data-warp="100" title="100배속 (3)">100x</button>
+  </div>
+  <div class="sep"></div>
+  <div class="group"><span>카메라</span>
+    <button data-cam="follow" class="on" title="로켓 추적 (C)">로켓 추적</button><button data-cam="free" title="자유 회전 (C)">자유 회전</button>
+  </div>
+  <div class="sep"></div>
+  <button id="btnSound" title="소리 켜기/끄기 (M)" aria-label="소리 켜기/끄기">🔊</button>
+</nav>
+
+<div id="hint">드래그: 시점 회전 · 휠/핀치: 확대·축소<br>Space 발사 · R 리셋 · 1/2/3 배속 · C 카메라 · M 소리</div>
+
+<div id="loading"><div class="spinner"></div><div id="loadMsg">3D 엔진(three.js) 불러오는 중…</div></div>
+
+<script type="module">
+/* =====================================================================
+   VIBE-2 로켓 발사 시뮬레이터 — 단일 파일 (three.js는 CDN)
+   좌표계: 지구 중심 관성계(자전 무시), 단위 m·s·kg, +Y = 북극 방향
+   ===================================================================== */
+const loadMsg = document.getElementById('loadMsg');
+const THREE_URLS = [
+  'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js',
+  'https://unpkg.com/three@0.160.0/build/three.module.js',
+];
+let THREE = null;
+for (const url of THREE_URLS) {
+  try { THREE = await import(url); break; } catch (e) { /* 다음 CDN 시도 */ }
+}
+
+/* ============================ 물리 상수 ============================ */
+const MU = 3.986004418e14;   // 지구 중력 상수 GM [m^3/s^2]
+const R_E = 6371000;         // 지구 평균 반경 [m]
+const G0 = 9.80665;          // 표준 중력가속도 [m/s^2]
+const R_AIR = 287.053;       // 공기 기체상수 [J/(kg·K)]
+const GAMMA_AIR = 1.4;       // 비열비
+const P0 = 101325;           // 해면 기압 [Pa]
+const DEG = Math.PI / 180;
+
+/* 미국 표준대기 1976 (0–86 km): [지오퍼텐셜 고도 m, 기저온도 K, 감률 K/m, 기저압력 Pa] */
+const ATM_LAYERS = [
+  [0, 288.15, -0.0065, 101325.0],
+  [11000, 216.65, 0.0, 22632.06],
+  [20000, 216.65, 0.001, 5474.889],
+  [32000, 228.65, 0.0028, 868.0187],
+  [47000, 270.65, 0.0, 110.9063],
+  [51000, 270.65, -0.0028, 66.93887],
+  [71000, 214.65, -0.002, 3.956420],
+];
+const R0_GEOPOT = 6356766, GMR = 0.0341631947; // g0·M/R*
+/* 86 km 이상: 표준대기 1976 밀도표 [km, kg/m^3] (로그 보간) */
+const UPPER_RHO = [[86,6.958e-6],[90,3.416e-6],[100,5.604e-7],[110,9.708e-8],[120,2.222e-8],[130,8.152e-9],[140,3.831e-9],[150,2.076e-9],[160,1.233e-9],[180,5.194e-10],[200,2.541e-10],[250,6.073e-11],[300,1.916e-11],[350,7.014e-12],[400,2.803e-12],[450,1.184e-12],[500,5.215e-13],[600,1.137e-13],[700,3.070e-14],[800,1.136e-14],[900,5.759e-15],[1000,3.561e-15]];
+
+function atmosphere(h, o) {
+  if (h < 0) h = 0;
+  if (h < 86000) {
+    const H = R0_GEOPOT * h / (R0_GEOPOT + h);
+    let i = ATM_LAYERS.length - 1;
+    while (i > 0 && H < ATM_LAYERS[i][0]) i--;
+    const L = ATM_LAYERS[i], dH = H - L[0];
+    if (L[2] === 0) { o.T = L[1]; o.p = L[3] * Math.exp(-GMR * dH / L[1]); }
+    else { o.T = L[1] + L[2] * dH; o.p = L[3] * Math.pow(L[1] / o.T, GMR / L[2]); }
+    o.rho = o.p / (R_AIR * o.T);
+  } else {
+    o.T = 186.946;
+    const zk = h / 1000;
+    if (zk >= 1000) o.rho = 3.561e-15 * Math.exp(-(zk - 1000) / 268);
+    else {
+      let j = 0; while (UPPER_RHO[j + 1][0] < zk) j++;
+      const a = UPPER_RHO[j], b = UPPER_RHO[j + 1];
+      o.rho = a[1] * Math.exp(Math.log(b[1] / a[1]) * (zk - a[0]) / (b[0] - a[0]));
+    }
+    o.p = o.rho * R_AIR * o.T;
+  }
+  o.a = Math.sqrt(GAMMA_AIR * R_AIR * o.T); // 음속
+  return o;
+}
+
+/* 마하수에 따른 항력계수 (천음속 항력 상승 반영) */
+const CD_TAB = [[0,0.30],[0.6,0.30],[0.8,0.34],[0.95,0.48],[1.05,0.58],[1.2,0.55],[1.5,0.47],[2.0,0.39],[3.0,0.31],[5.0,0.26],[10,0.22]];
+function cdOf(M) {
+  if (M <= 0) return CD_TAB[0][1];
+  for (let i = 1; i < CD_TAB.length; i++) {
+    if (M < CD_TAB[i][0]) { const a = CD_TAB[i-1], b = CD_TAB[i]; return a[1] + (b[1]-a[1]) * (M - a[0]) / (b[0] - a[0]); }
+  }
+  return CD_TAB[CD_TAB.length - 1][1];
+}
+
+/* 3D 벡터 (배열) 도우미 — 물리 계산은 전부 double 정밀도 */
+const vdot = (a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
+const vlen = a=>Math.hypot(a[0],a[1],a[2]);
+const vscale = (a,s)=>[a[0]*s,a[1]*s,a[2]*s];
+const vadd = (a,b)=>[a[0]+b[0],a[1]+b[1],a[2]+b[2]];
+const vsub = (a,b)=>[a[0]-b[0],a[1]-b[1],a[2]-b[2]];
+const vcross = (a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
+const vnorm = a=>{const l=vlen(a)||1;return [a[0]/l,a[1]/l,a[2]/l];};
+const clamp = (x,a,b)=>x<a?a:(x>b?b:x);
+const smooth01 = x=>{x=clamp(x,0,1);return x*x*(3-2*x);};
+
+/* 강체가 아닌 질점 비행체: 상태 [x y z vx vy vz 추진제질량], RK4 적분 */
+class Body {
+  constructor() {
+    this.s = new Float64Array(7);
+    this.prev = new Float64Array(3);     // 렌더 보간용 직전 위치
+    this.fixedMass = 1000;               // 추진제 외 질량
+    this.area = 7.07; this.cdMul = 1;
+    this.eng = null; this.throttle = 0; this.u = [0,1,0]; this.uPrev = [0,1,0];
+    this.k1 = new Float64Array(7); this.k2 = new Float64Array(7); this.k3 = new Float64Array(7); this.k4 = new Float64Array(7); this.tmp = new Float64Array(7);
+    this.atm = { T: 288.15, p: P0, rho: 1.225, a: 340.3 };
+  }
+  mass() { return this.fixedMass + Math.max(0, this.s[6]); }
+  thrustAt(p) { return this.eng && this.throttle > 0 && this.s[6] > 0 ? Math.max(0, this.throttle*this.eng.thrustVac - p*this.eng.exitArea) : 0; }
+  deriv(s, out) {
+    const x=s[0],y=s[1],z=s[2],vx=s[3],vy=s[4],vz=s[5];
+    const m = this.fixedMass + Math.max(0, s[6]);
+    const r2 = x*x+y*y+z*z, r = Math.sqrt(r2), gk = -MU/(r2*r);
+    // 중력: a = -GM·r/|r|^3 (고도가 높을수록 약해짐)
+    let ax = gk*x, ay = gk*y, az = gk*z, mdot = 0;
+    const atm = atmosphere(r - R_E, this.atm);
+    if (this.eng && this.throttle > 0 && s[6] > 0) {
+      // 추력: F = F_vac − p_amb·A_e  (대기압에 의한 추력 손실)
+      const F = Math.max(0, this.throttle*this.eng.thrustVac - atm.p*this.eng.exitArea);
+      mdot = this.throttle*this.eng.mdot;   // 연료 소모: dm/dt = −F_vac/(Isp_vac·g0)
+      const k = F/m; ax += k*this.u[0]; ay += k*this.u[1]; az += k*this.u[2];
+    }
+    const v2 = vx*vx+vy*vy+vz*vz;
+    if (atm.rho > 0 && v2 > 1e-10) {
+      // 공기저항: D = ½·ρ(h)·v²·Cd(M)·A  (속도 반대 방향)
+      const v = Math.sqrt(v2);
+      const D = 0.5*atm.rho*v2*cdOf(v/atm.a)*this.cdMul*this.area;
+      const k = D/(m*v); ax -= k*vx; ay -= k*vy; az -= k*vz;
+    }
+    out[0]=vx; out[1]=vy; out[2]=vz; out[3]=ax; out[4]=ay; out[5]=az; out[6]=-mdot;
+  }
+  rk4(dt) {
+    const s = this.s, t = this.tmp, k1=this.k1,k2=this.k2,k3=this.k3,k4=this.k4;
+    this.prev[0]=s[0]; this.prev[1]=s[1]; this.prev[2]=s[2];
+    this.deriv(s, k1);
+    for (let i=0;i<7;i++) t[i]=s[i]+0.5*dt*k1[i];
+    this.deriv(t, k2);
+    for (let i=0;i<7;i++) t[i]=s[i]+0.5*dt*k2[i];
+    this.deriv(t, k3);
+    for (let i=0;i<7;i++) t[i]=s[i]+dt*k3[i];
+    this.deriv(t, k4);
+    for (let i=0;i<7;i++) s[i]+=dt/6*(k1[i]+2*k2[i]+2*k3[i]+k4[i]);
+    if (s[6] < 0) s[6] = 0;
+  }
+  holdPrev() { this.prev[0]=this.s[0]; this.prev[1]=this.s[1]; this.prev[2]=this.s[2]; }
+}
+
+/* 2단 유도: 2차원 PEG(Powered Explicit Guidance, 선형 탄젠트 근사) */
+class PEG {
+  constructor(rT, vT) { this.rT = rT; this.vT = vT; this.init = false; this.A=0; this.B=0; this.T=0; this.tRef=0; }
+  update(t, r, vr, vt, a0, ve) {
+    const tau = ve / a0;
+    if (!this.init) {
+      const dv0 = Math.max(200, this.vT - vt + 600);
+      this.T = Math.min(tau*(1-Math.exp(-dv0/ve)), 0.95*tau);
+      this.tRef = t; this.init = true;
+      for (let i=0;i<60;i++) this.iter(r, vr, vt, a0, ve, tau);
+      return;
+    }
+    const dt = t - this.tRef; this.tRef = t;
+    this.A += this.B*dt; this.T -= dt;
+    if (this.T < 7) return;                 // 종료 직전에는 조향 상수 고정
+    for (let i=0;i<4;i++) this.iter(r, vr, vt, a0, ve, tau);
+  }
+  iter(r, vr, vt, a0, ve, tau) {
+    const T = Math.min(Math.max(this.T, 1), 0.98*tau);
+    const b0 = -ve*Math.log(1 - T/tau), b1 = b0*tau - ve*T;
+    const c0 = b0*T - b1, c1 = c0*tau - ve*T*T/2;
+    const k1 = -vr, k2 = this.rT - r - vr*T;
+    const det = b0*c1 - b1*c0;
+    const A = (k1*c1 - b1*k2)/det, B = (b0*k2 - c0*k1)/det;
+    if (!isFinite(A) || !isFinite(B)) return;
+    this.A = A; this.B = B;
+    const rT = this.rT, vT = this.vT;
+    const dh = rT*vT - r*vt, rbar = 0.5*(r + rT);
+    const C0 = (MU/(r*r) - vt*vt/r)/a0;
+    const fr0 = A + C0;
+    const aT = a0/(1 - T/tau);
+    const CT = (MU/(rT*rT) - vT*vT/rT)/aT;
+    const frT = A + B*T + CT;
+    const frd = (frT - fr0)/T;
+    const ft0 = 1 - fr0*fr0/2, ftd = -fr0*frd, ftdd = -frd*frd/2;
+    const dv = (dh/rbar + ve*T*(ftd + ftdd*tau) + ftdd*ve*T*T/2)/(ft0 + ftd*tau + ftdd*tau*tau);
+    const Tn = tau*(1 - Math.exp(-dv/ve));
+    if (isFinite(Tn)) this.T = Math.min(Math.max(Tn, 0.5), 0.98*tau);
+  }
+  steer(t, r, vt, a) { return this.A + this.B*(t - this.tRef) + (MU/(r*r) - vt*vt/r)/a; }
+}
+
+/* ============================ 비행체 제원 ============================
+   1단: 케로신/액체산소 (Isp 285 s 해면 / 312 s 진공), 이륙 추력/중량비 2.4, 연소 46.9 s
+   2단: 액체수소/액체산소 (Isp 450 s 진공), 추력 650 kN, 4.5 G 제한 스로틀       */
+const VEH = (() => {
+  const c = {
+    payload: 2000, fairing: 600,
+    s1TW: 2.4, s1burn: 46.9, s1dryFrac: 0.07, s1ispVac: 312, s1ispSL: 285,
+    s2dry: 4500, s2prop: 48000, s2thrustVac: 650e3, s2ispVac: 450, s2exitArea: 1.2,
+    gLimit: 4.5, diameter: 3.0,
+    kickDeg: 16, kickStart: 5, kickEnd: 20,
+    targetAlt: 250e3,
+    mecoToSep: 2.0, sepToIgn: 2.5, fairingAlt: 110e3,
+    countdown: 3.0, ignT: -1.5, rampT: 1.2,
+    baseHeight: 5.2,      // 발사대 위 로켓 하단(노즐 출구) 높이 [m]
+    stage2Offset: 26.5,   // 적층 상태에서 2단 노즐 출구 위치 [m]
+  };
+  const upper = c.payload + c.fairing + c.s2dry + c.s2prop;
+  const k = c.s1TW*c.s1burn/c.s1ispSL;
+  c.m0 = upper/(1 - k*(1 + c.s1dryFrac));
+  c.s1prop = k*c.m0; c.s1dry = c.s1dryFrac*c.s1prop;
+  c.s1 = { thrustVac: c.s1TW*c.m0*G0*c.s1ispVac/c.s1ispSL };
+  c.s1.mdot = c.s1.thrustVac/(c.s1ispVac*G0);
+  c.s1.exitArea = c.s1.mdot*G0*(c.s1ispVac - c.s1ispSL)/P0;
+  c.s2 = { thrustVac: c.s2thrustVac, mdot: c.s2thrustVac/(c.s2ispVac*G0), exitArea: c.s2exitArea };
+  c.area = Math.PI*(c.diameter/2)**2;
+  return c;
+})();
+
+/* 발사장 (가상 대륙, 북위 34.4°) 과 태양 방향 */
+const PAD = (() => {
+  const lat = 34.4*DEG, lon = 127.5*DEG;
+  const up = [Math.cos(lat)*Math.cos(lon), Math.sin(lat), -Math.cos(lat)*Math.sin(lon)];
+  const east = [-Math.sin(lon), 0, -Math.cos(lon)];
+  const north = vcross(up, east);
+  return { lat, lon, up, east, north, pos: vscale(up, R_E) };
+})();
+const ORBIT_N = PAD.north;   // 정동 방향 발사 → 궤도면 법선
+const SUN_DIR = (() => {
+  const el = 40*DEG, az = 225*DEG;   // 발사장 기준 고도 40°, 남서쪽
+  const hz = vadd(vscale(PAD.north, Math.cos(az)), vscale(PAD.east, Math.sin(az)));
+  return vnorm(vadd(vscale(PAD.up, Math.sin(el)), vscale(hz, Math.cos(el))));
+})();
+
+function orbitElements(s) {
+  const rv = [s[0],s[1],s[2]], vv = [s[3],s[4],s[5]];
+  const r = vlen(rv), v2 = vdot(vv,vv), eps = v2/2 - MU/r;
+  const hv = vcross(rv, vv), hm = vlen(hv);
+  const e = Math.sqrt(Math.max(0, 1 + 2*eps*hm*hm/(MU*MU)));
+  const rp = hm > 0 ? hm*hm/(MU*(1+e)) : 0;
+  const a = -MU/(2*eps);
+  const ra = eps < 0 ? a*(1+e) : Infinity;
+  const inc = hm > 1 ? Math.acos(clamp(hv[1]/hm, -1, 1))/DEG : NaN;
+  const period = eps < 0 ? 2*Math.PI*Math.sqrt(a*a*a/MU) : NaN;
+  return { a, e, rp, ra, inc, period, hv, hm, eps, r, v: Math.sqrt(v2) };
+}
+
+const S1_COM = 12.0;        // 1단 무게중심 (1단 노즐 출구 기준) [m]
+const FAIRING_COM = 17.0;   // 페어링 중심 (2단 노즐 출구 기준) [m]
+const PHASE_LABEL = { ready: '발사 대기', countdown: '카운트다운', stage1: '1단 연소', meco: '1단 분리', sep: '1단 분리', stage2: '2단 연소', orbit: '궤도 진입', failed: '궤도 진입 실패' };
+
+/* 비행 시퀀스 + 유도 + 잔해(분리된 1단, 페어링) 시뮬레이션 */
+class Flight {
+  constructor(onEvent) { this.onEvent = onEvent; this.reset(); }
+  reset() {
+    const c = VEH;
+    this.t = -c.countdown; this.phase = 'ready';
+    const b = this.body = new Body();
+    const p = vscale(PAD.up, R_E + c.baseHeight);
+    b.s.set([p[0], p[1], p[2], 0, 0, 0, c.s1prop]);
+    b.holdPrev();
+    b.fixedMass = c.s1dry + c.s2dry + c.s2prop + c.fairing + c.payload;
+    b.area = c.area; b.eng = c.s1; b.u = PAD.up.slice(); b.uPrev = b.u.slice(); b.throttle = 0;
+    this.gAtt = 90*DEG;
+    this.stage = 1; this.fairingOn = true; this.clamped = true; this.ignited = false;
+    this.peg = null; this.lastPeg = -1;
+    this.tMeco = this.tSep = this.tIgn2 = this.tSeco = null;
+    this.maxQ = 0; this.tMaxQ = 0; this.maxQReported = false; this.mach1 = false; this.pitchReported = false;
+    this.debris = [];
+    this.result = null;
+    this.atm = { T: 288.15, p: P0, rho: 1.225, a: 340.3 };
+    const rT = R_E + c.targetAlt;
+    this.rT = rT; this.vT = Math.sqrt(MU/rT); this.epsT = -MU/(2*rT);
+  }
+  launch() {
+    if (this.phase !== 'ready') return false;
+    this.phase = 'countdown'; this.emit('countdown'); return true;
+  }
+  emit(type, data) { if (this.onEvent) this.onEvent(type, this.t, data || {}); }
+  get running() { return this.phase !== 'ready'; }
+
+  step(dt) {
+    const c = VEH, b = this.body, t = this.t;
+    const r = vlen(b.s), rh = [b.s[0]/r, b.s[1]/r, b.s[2]/r];
+    const th = vcross(ORBIT_N, rh);
+    const vr = b.s[3]*rh[0] + b.s[4]*rh[1] + b.s[5]*rh[2];
+    const vt = b.s[3]*th[0] + b.s[4]*th[1] + b.s[5]*th[2];
+    const v = Math.hypot(b.s[3], b.s[4], b.s[5]);
+    const h = r - R_E;
+    atmosphere(h, this.atm);
+    const q = 0.5*this.atm.rho*v*v, M = v/this.atm.a;
+    let gCmd = this.gAtt, rate = 3*DEG;
+
+    switch (this.phase) {
+      case 'countdown':
+        if (t >= c.ignT) {
+          if (!this.ignited) { this.ignited = true; this.emit('ignition'); }
+          b.throttle = smooth01((t - c.ignT)/c.rampT);
+        }
+        if (t >= 0) { this.phase = 'stage1'; this.clamped = false; b.throttle = 1; this.emit('liftoff'); }
+        gCmd = 90*DEG;
+        break;
+      case 'stage1':
+        b.throttle = 1;
+        // 수직 상승 → 피치 킥(16°) → 중력 선회(추력 = 속도 방향)
+        if (t < c.kickStart) gCmd = 90*DEG;
+        else if (t < c.kickEnd) {
+          gCmd = (90 - c.kickDeg*(t - c.kickStart)/(c.kickEnd - c.kickStart))*DEG;
+          if (!this.pitchReported) { this.pitchReported = true; this.emit('pitch'); }
+        } else gCmd = Math.min(Math.atan2(vr, vt), (90 - c.kickDeg)*DEG);
+        rate = 2*DEG;
+        if (q > this.maxQ) { this.maxQ = q; this.tMaxQ = t; }
+        else if (!this.maxQReported && this.maxQ > 20000 && q < this.maxQ*0.97) { this.maxQReported = true; this.emit('maxq', { q: this.maxQ }); }
+        if (!this.mach1 && M >= 1) { this.mach1 = true; this.emit('mach1'); }
+        if (b.s[6] <= 0) { this.phase = 'meco'; this.tMeco = t; b.throttle = 0; this.emit('meco', { h, v }); }
+        break;
+      case 'meco':
+        gCmd = Math.atan2(vr, vt);
+        if (t >= this.tMeco + c.mecoToSep) this.separate();
+        break;
+      case 'sep':
+        gCmd = Math.atan2(vr, vt);
+        if (t >= this.tSep + c.sepToIgn) {
+          this.phase = 'stage2'; this.tIgn2 = t; this.peg = new PEG(this.rT, this.vT); this.lastPeg = -1;
+          this.emit('ign2');
+        }
+        break;
+      case 'stage2': {
+        const m = b.mass();
+        const thrLim = Math.min(1, c.gLimit*G0*m/c.s2.thrustVac);   // 4.5 G 가속 제한
+        b.throttle = Math.min(thrLim, (t - this.tIgn2)/1.0);
+        const F = c.s2.thrustVac*thrLim - this.atm.p*c.s2.exitArea;
+        const a0 = F/m, ve = (c.s2.thrustVac - this.atm.p*c.s2.exitArea)/c.s2.mdot;
+        if (this.lastPeg < 0 || t - this.lastPeg >= 0.5) { this.peg.update(t, r, vr, vt, a0, ve); this.lastPeg = t; }
+        let fr = this.peg.steer(t, r, vt, a0*Math.max(0.05, b.throttle/thrLim));
+        if (!isFinite(fr)) fr = 0;
+        gCmd = Math.asin(clamp(fr, -0.7, 0.98));
+        rate = 4*DEG;
+        if (this.fairingOn && h > c.fairingAlt) this.jettisonFairing();
+        const eps = v*v/2 - MU/r;
+        if (eps >= this.epsT || b.s[6] <= 0) { this.tSeco = t; b.throttle = 0; this.finishAscent(b.s[6] <= 0); }
+        break;
+      }
+      default: // orbit / failed: 진행 방향(prograde) 자세 유지
+        gCmd = Math.atan2(vr, vt); rate = 2*DEG;
+    }
+
+    this.gAtt += clamp(gCmd - this.gAtt, -rate*dt, rate*dt);
+    b.uPrev = b.u;
+    b.u = [rh[0]*Math.sin(this.gAtt) + th[0]*Math.cos(this.gAtt),
+           rh[1]*Math.sin(this.gAtt) + th[1]*Math.cos(this.gAtt),
+           rh[2]*Math.sin(this.gAtt) + th[2]*Math.cos(this.gAtt)];
+    if (this.clamped) { b.s[6] = Math.max(0, b.s[6] - b.eng.mdot*b.throttle*dt); b.holdPrev(); }
+    else b.rk4(dt);
+
+    for (const d of this.debris) {
+      if (!d.alive) continue;
+      d.body.rk4(dt);
+      if (vlen(d.body.s) < R_E) {
+        d.alive = false;
+        if (d.kind === 's1') this.emit('s1impact', { range: R_E*Math.acos(clamp(vdot(vnorm(d.body.s), PAD.up), -1, 1)) });
+      }
+    }
+    if (!this.clamped && this.phase !== 'failed' && vlen(b.s) < R_E + 1) {
+      this.phase = 'failed'; b.throttle = 0; this.emit('crash');
+    }
+    this.t += dt;
+  }
+
+  separate() {
+    const c = VEH, b = this.body;
+    this.phase = 'sep'; this.tSep = this.t; this.stage = 2;
+    const d = new Body();
+    d.s.set(b.s); d.s[6] = 0;
+    d.fixedMass = c.s1dry; d.area = c.area; d.cdMul = 1.6;
+    for (let i = 0; i < 3; i++) { d.s[i] += b.u[i]*S1_COM; d.s[3+i] -= b.u[i]*0.6; }   // 무게중심 기준 + 분리 스프링 반동
+    d.holdPrev(); d.u = b.u.slice(); d.uPrev = d.u;
+    this.debris.push({ kind: 's1', body: d, u0: b.u.slice(), t0: this.t, axis: ORBIT_N.slice(), rate: 4.5*DEG, roll: 1.2*DEG, alive: true });
+    for (let i = 0; i < 3; i++) { b.s[i] += b.u[i]*c.stage2Offset; b.s[3+i] += b.u[i]*0.6; }
+    b.holdPrev();
+    b.s[6] = c.s2prop; b.fixedMass = c.s2dry + c.fairing + c.payload; b.eng = c.s2; b.throttle = 0;
+    this.emit('sep');
+  }
+
+  jettisonFairing() {
+    const c = VEH, b = this.body;
+    this.fairingOn = false; b.fixedMass -= c.fairing;
+    const side = vscale(ORBIT_N, -1);                 // 모델 +Z(앞쪽 반쪽) 방향
+    const axis = vnorm(vcross(ORBIT_N, b.u));          // 모델 +X 축
+    for (const sgn of [1, -1]) {
+      const d = new Body();
+      d.s.set(b.s); d.s[6] = 0; d.fixedMass = c.fairing/2; d.area = 12; d.cdMul = 2.0;
+      for (let i = 0; i < 3; i++) { d.s[i] += b.u[i]*FAIRING_COM; d.s[3+i] += side[i]*sgn*3.5 + b.u[i]*0.5; }
+      d.holdPrev(); d.u = b.u.slice(); d.uPrev = d.u;
+      this.debris.push({ kind: 'fairing', side: sgn, body: d, u0: b.u.slice(), t0: this.t, axis, rate: sgn*18*DEG, roll: 0, alive: true });
+    }
+    this.emit('fairing');
+  }
+
+  finishAscent(depleted) {
+    const el = orbitElements(this.body.s);
+    this.result = { periAlt: el.rp - R_E, apoAlt: el.ra - R_E, period: el.period, inc: el.inc, depleted, fuelLeft: this.body.s[6]/VEH.s2prop };
+    this.emit('seco', this.result);
+    if (el.rp - R_E > 120e3) { this.phase = 'orbit'; this.emit('orbit', this.result); }
+    else { this.phase = 'failed'; this.emit('fail', this.result); }
+  }
+
+  /* HUD용 텔레메트리 (현재 상태 기준) */
+  telemetry() {
+    const c = VEH, b = this.body, s = b.s;
+    const r = vlen(s), rh = [s[0]/r, s[1]/r, s[2]/r];
+    const th = vcross(ORBIT_N, rh);
+    const vel = [s[3], s[4], s[5]];
+    const v = vlen(vel), h = r - R_E;
+    const atm = atmosphere(h, {});
+    const thrust = b.thrustAt(atm.p);
+    const m = b.mass();
+    const drag = 0.5*atm.rho*v*v*cdOf(v/atm.a)*b.area;
+    const el = orbitElements(s);
+    let fuel1, fuel2;
+    if (this.stage === 1) { fuel1 = s[6]/c.s1prop; fuel2 = 1; } else { fuel1 = 0; fuel2 = s[6]/c.s2prop; }
+    return {
+      t: this.t, phase: this.phase, h, v, M: v/atm.a, q: 0.5*atm.rho*v*v,
+      vr: vdot(vel, rh), vt: vdot(vel, th),
+      acc: this.clamped ? 0 : (thrust - drag)/m/G0,
+      thrust, mass: m, fuel1, fuel2, fuel: this.stage === 1 ? fuel1 : fuel2,
+      down: R_E*Math.acos(clamp(vdot(rh, PAD.up), -1, 1)),
+      el, rho: atm.rho, p: atm.p,
+    };
+  }
+}
+
+/* ============================ GLSL 공용 코드 ============================ */
+const GLSL_NOISE = /* glsl */`
+vec3 mod289(vec3 x){return x - floor(x*(1.0/289.0))*289.0;}
+vec4 mod289(vec4 x){return x - floor(x*(1.0/289.0))*289.0;}
+vec4 permute(vec4 x){return mod289(((x*34.0)+1.0)*x);}
+vec4 taylorInvSqrt(vec4 r){return 1.79284291400159 - 0.85373472095314*r;}
+float snoise(vec3 v){
+  const vec2 C = vec2(1.0/6.0, 1.0/3.0);
+  const vec4 D = vec4(0.0, 0.5, 1.0, 2.0);
+  vec3 i = floor(v + dot(v, C.yyy));
+  vec3 x0 = v - i + dot(i, C.xxx);
+  vec3 g = step(x0.yzx, x0.xyz);
+  vec3 l = 1.0 - g;
+  vec3 i1 = min(g.xyz, l.zxy);
+  vec3 i2 = max(g.xyz, l.zxy);
+  vec3 x1 = x0 - i1 + C.xxx;
+  vec3 x2 = x0 - i2 + C.yyy;
+  vec3 x3 = x0 - D.yyy;
+  i = mod289(i);
+  vec4 p = permute(permute(permute(i.z + vec4(0.0, i1.z, i2.z, 1.0)) + i.y + vec4(0.0, i1.y, i2.y, 1.0)) + i.x + vec4(0.0, i1.x, i2.x, 1.0));
+  float n_ = 0.142857142857;
+  vec3 ns = n_ * D.wyz - D.xzx;
+  vec4 j = p - 49.0*floor(p*ns.z*ns.z);
+  vec4 x_ = floor(j*ns.z);
+  vec4 y_ = floor(j - 7.0*x_);
+  vec4 x = x_*ns.x + ns.yyyy;
+  vec4 y = y_*ns.x + ns.yyyy;
+  vec4 h = 1.0 - abs(x) - abs(y);
+  vec4 b0 = vec4(x.xy, y.xy);
+  vec4 b1 = vec4(x.zw, y.zw);
+  vec4 s0 = floor(b0)*2.0 + 1.0;
+  vec4 s1 = floor(b1)*2.0 + 1.0;
+  vec4 sh = -step(h, vec4(0.0));
+  vec4 a0 = b0.xzyw + s0.xzyw*sh.xxyy;
+  vec4 a1 = b1.xzyw + s1.xzyw*sh.zzww;
+  vec3 p0 = vec3(a0.xy, h.x);
+  vec3 p1 = vec3(a0.zw, h.y);
+  vec3 p2 = vec3(a1.xy, h.z);
+  vec3 p3 = vec3(a1.zw, h.w);
+  vec4 norm = taylorInvSqrt(vec4(dot(p0,p0), dot(p1,p1), dot(p2,p2), dot(p3,p3)));
+  p0 *= norm.x; p1 *= norm.y; p2 *= norm.z; p3 *= norm.w;
+  vec4 m = max(0.6 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.0);
+  m = m*m;
+  return 42.0*dot(m*m, vec4(dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3)));
+}
+float fbm3(vec3 p, int oct){
+  float a = 0.5, s = 0.0;
+  for (int i = 0; i < 9; i++) { if (i >= oct) break; s += a*snoise(p); p = p*2.03 + vec3(1.7, 9.2, 3.1); a *= 0.5; }
+  return s;
+}
+float coastLine(float dN){ return 3200.0 + 900.0*sin(dN/6100.0) + 450.0*sin(dN/2300.0 + 1.3); }
+`;
+
+/* 단일 산란 대기 모델: Rayleigh + Mie, 태양 방향 광학 깊이는 Chapman 함수 근사 */
+const GLSL_ATMO = /* glsl */`
+const float R_PL = 6371000.0;
+const float R_AT = 6471000.0;
+const float H_R = 8000.0;
+const float H_M = 1200.0;
+const vec3 BETA_R = vec3(5.8e-6, 13.5e-6, 33.1e-6);
+const float BETA_M = 2.1e-5;
+const float MIE_G = 0.76;
+const float SUN_I = 22.0;
+float chapmanH(float X, float h, float mu){
+  float c = sqrt(X + h);
+  if (mu >= 0.0) return c/(c*mu + 1.0)*exp(-h);
+  float x0 = sqrt(1.0 - mu*mu)*(X + h);
+  float c0 = sqrt(x0);
+  return 2.0*c0*exp(min(X - x0, 40.0)) - c/(1.0 - c*mu)*exp(-h);
+}
+vec3 sunExtinction(float h, float mu){
+  float tR = H_R*chapmanH(R_PL/H_R, h/H_R, mu);
+  float tM = H_M*chapmanH(R_PL/H_M, h/H_M, mu);
+  return exp(-(BETA_R*tR + BETA_M*1.1*tM));
+}
+float phaseRay(float c){ return 0.0596831*(1.0 + c*c); }
+float phaseMie(float c){ float g2 = MIE_G*MIE_G; return 0.1193662*((1.0 - g2)*(1.0 + c*c))/((2.0 + g2)*pow(1.0 + g2 - 2.0*MIE_G*c, 1.5)); }
+float warpF(float x, float w){ return w >= 0.0 ? pow(x, w) : 1.0 - pow(1.0 - x, -w); }
+vec3 atmoInscatter(vec3 O, vec3 D, float t0, float t1, vec3 S, float w, int N, out vec3 trans){
+  float odR = 0.0, odM = 0.0;
+  vec3 sumR = vec3(0.0), sumM = vec3(0.0);
+  float L = max(t1 - t0, 0.0), fN = float(N), prevF = 0.0;
+  for (int i = 0; i < 24; i++){
+    if (i >= N) break;
+    float f1 = warpF((float(i) + 1.0)/fN, w);
+    float fm = warpF((float(i) + 0.5)/fN, w);
+    float ds = (f1 - prevF)*L; prevF = f1;
+    vec3 P = O + D*(t0 + fm*L);
+    float r = length(P);
+    float h = max(r - R_PL, 0.0);
+    float dR = exp(-h/H_R)*ds, dM = exp(-h/H_M)*ds;
+    odR += 0.5*dR; odM += 0.5*dM;
+    vec3 T = sunExtinction(h, dot(P, S)/r)*exp(-(BETA_R*odR + BETA_M*1.1*odM));
+    sumR += dR*T; sumM += dM*T;
+    odR += 0.5*dR; odM += 0.5*dM;
+  }
+  trans = exp(-(BETA_R*odR + BETA_M*1.1*odM));
+  float c = dot(D, S);
+  return SUN_I*(sumR*BETA_R*phaseRay(c) + sumM*BETA_M*phaseMie(c));
+}
+vec3 toneMap(vec3 L, float exposure){ vec3 c = 1.0 - exp(-L*exposure); return pow(c, vec3(1.0/2.2)); }
+`;
+
+/* 절차적 지구 텍스처 (equirectangular): A = 반사율(√ 인코딩) + 바다 마스크, B = 구름 + 도시 불빛 */
+const GEN_FRAG = /* glsl */`
+uniform int uMode;
+uniform vec3 uPadUp, uPadEast, uPadNorth;
+varying vec2 vUv;
+${GLSL_NOISE}
+const float RE = 6371000.0;
+vec3 dirOf(vec2 uv){ float lon = (uv.x - 0.5)*6.28318530718; float lat = (uv.y - 0.5)*3.14159265359; return vec3(cos(lat)*cos(lon), sin(lat), -cos(lat)*sin(lon)); }
+float landField(vec3 p, float dist, out float base){
+  vec3 q = p*1.8;
+  vec3 w = vec3(snoise(q*1.2 + 11.0), snoise(q*1.2 + 23.0), snoise(q*1.2 + 37.0));
+  base = fbm3(q + w*0.45 + 3.0, 8);
+  float c = base - 0.06;
+  float dE = dot(p, uPadEast)*RE, dN = dot(p, uPadNorth)*RE;
+  float regional = clamp((coastLine(dN) - dE)/120e3, -1.0, 1.0)*0.5 + c*0.3*(1.0 - exp(-pow(dist/150e3, 2.0)));
+  return mix(c, regional, exp(-pow(dist/700e3, 2.0)));
+}
+void main(){
+  vec3 p = dirOf(vUv);
+  float alat = abs(asin(p.y))*57.2958;
+  float dist = acos(clamp(dot(p, uPadUp), -1.0, 1.0))*RE;
+  float base;
+  float land = landField(p, dist, base);
+  if (uMode == 0){
+    vec3 col; float water;
+    if (land > 0.0){
+      float moist = fbm3(p*3.3 + 7.0, 5)*0.5 + 0.5;
+      float nearPad = exp(-pow(dist/600e3, 2.0));
+      moist = mix(moist, 0.72, nearPad);
+      float arid = clamp(exp(-pow((alat - 23.0)/10.0, 2.0))*1.25 - moist*0.95 + 0.25, 0.0, 1.0)*(1.0 - nearPad);
+      vec3 forest = vec3(0.045, 0.085, 0.030), grass = vec3(0.10, 0.13, 0.05);
+      vec3 savanna = vec3(0.22, 0.19, 0.10), desert = vec3(0.50, 0.40, 0.25);
+      vec3 tundra = vec3(0.20, 0.19, 0.15), rock = vec3(0.17, 0.15, 0.13);
+      col = mix(forest, grass, smoothstep(0.35, 0.75, 1.0 - moist));
+      col = mix(col, savanna, smoothstep(0.25, 0.6, arid));
+      col = mix(col, desert, smoothstep(0.55, 0.85, arid));
+      col = mix(col, tundra, smoothstep(50.0, 64.0, alat));
+      col = mix(col, rock, smoothstep(0.22, 0.45, land)*0.75);
+      float snow = smoothstep(66.0, 72.0, alat + base*10.0) + smoothstep(0.42, 0.55, land)*smoothstep(25.0, 50.0, alat);
+      col = mix(col, vec3(0.80, 0.83, 0.88), clamp(snow, 0.0, 1.0));
+      col *= 0.85 + 0.3*(fbm3(p*40.0, 4)*0.5 + 0.5);
+      water = 0.0;
+    } else {
+      float depth = clamp(-land*4.0, 0.0, 1.0);
+      col = mix(vec3(0.015, 0.075, 0.095), vec3(0.004, 0.018, 0.050), smoothstep(0.0, 0.6, depth));
+      float ice = smoothstep(72.0, 78.0, alat + base*8.0);
+      col = mix(col, vec3(0.75, 0.80, 0.86), ice);
+      water = 1.0 - ice;
+    }
+    gl_FragColor = vec4(sqrt(col), water);
+  } else {
+    vec3 q = p*vec3(2.4, 3.2, 2.4);
+    vec3 w = vec3(snoise(q*0.9 + 5.0), snoise(q*0.9 + 15.0), snoise(q*0.9 + 25.0));
+    float n = fbm3(q*1.6 + w*0.8, 7)*0.5 + 0.5;
+    float band = 0.12*exp(-pow(alat/8.0, 2.0)) + 0.10*exp(-pow((alat - 55.0)/12.0, 2.0)) - 0.10*exp(-pow((alat - 25.0)/8.0, 2.0));
+    float cov = smoothstep(0.50, 0.78, n + band)*smoothstep(150e3, 450e3, dist);
+    float lights = 0.0;
+    if (land > 0.02){   // 인구 밀도(부드러운 값) — 불빛 점은 지구 셰이더에서 생성
+      float coastal = 0.3 + 0.7*(1.0 - smoothstep(0.03, 0.22, land));
+      float pop = smoothstep(0.55, 0.85, fbm3(p*7.0 + 3.0, 4)*0.5 + 0.5)*coastal*(1.0 - smoothstep(50.0, 62.0, alat));
+      lights = clamp(pop, 0.0, 1.0)*smoothstep(0.0, 0.05, land);
+    }
+    gl_FragColor = vec4(cov, lights, 0.0, 1.0);
+  }
+}
+`;
+
+function generateEarthTextures(renderer) {
+  const max = renderer.capabilities.maxTextureSize;
+  const W = Math.min(4096, max), H = W/2;
+  const aniso = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+  const makeRT = (w, h) => {
+    const rt = new THREE.WebGLRenderTarget(w, h, { depthBuffer: false, generateMipmaps: true,
+      minFilter: THREE.LinearMipmapLinearFilter, magFilter: THREE.LinearFilter });
+    rt.texture.wrapS = THREE.RepeatWrapping; rt.texture.wrapT = THREE.ClampToEdgeWrapping;
+    rt.texture.anisotropy = aniso;
+    return rt;
+  };
+  const rtA = makeRT(W, H), rtB = makeRT(W/2, H/2);
+  const mat = new THREE.ShaderMaterial({
+    uniforms: { uMode: { value: 0 }, uPadUp: { value: new THREE.Vector3(...PAD.up) },
+      uPadEast: { value: new THREE.Vector3(...PAD.east) }, uPadNorth: { value: new THREE.Vector3(...PAD.north) } },
+    vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }',
+    fragmentShader: GEN_FRAG, depthTest: false, depthWrite: false,
+  });
+  const quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), mat);
+  quad.frustumCulled = false;
+  const sc = new THREE.Scene(); sc.add(quad);
+  const cam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+  const prevRT = renderer.getRenderTarget();
+  renderer.setRenderTarget(rtA); renderer.render(sc, cam);
+  mat.uniforms.uMode.value = 1;
+  renderer.setRenderTarget(rtB); renderer.render(sc, cam);
+  renderer.setRenderTarget(prevRT);
+  quad.geometry.dispose(); mat.dispose();
+  return { albedo: rtA.texture, extra: rtB.texture };
+}
+
+/* 발사장을 극(pole)으로 하는 구 메시: 발사장 근처는 cm 단위, 멀어질수록 성기게.
+   정점은 발사장 기준 상대좌표(RTC)로 저장해 float32 정밀도 문제를 피한다. */
+function buildPadSphere(nSeg) {
+  const rings = [0];
+  for (let s = 2.0; s < 650e3; s *= 1.12) rings.push(s);
+  const tail = 80e3;
+  for (let x = rings[rings.length - 1] + tail; x < Math.PI*R_E - tail*0.5; x += tail) rings.push(x);
+  rings.push(Math.PI*R_E);
+  const nR = rings.length, up = PAD.up, east = PAD.east, north = PAD.north;
+  const pos = new Float32Array(nR*(nSeg + 1)*3);
+  let k = 0;
+  for (let i = 0; i < nR; i++) {
+    const a = rings[i]/R_E, ca1 = -2*Math.sin(a/2)**2, sa = Math.sin(a);
+    for (let j = 0; j <= nSeg; j++) {
+      const az = j/nSeg*2*Math.PI, ce = Math.sin(az), cn = Math.cos(az);
+      for (let c = 0; c < 3; c++) pos[k++] = R_E*(up[c]*ca1 + (north[c]*cn + east[c]*ce)*sa);
+    }
+  }
+  const idx = [];
+  for (let i = 0; i < nR - 1; i++) {
+    for (let j = 0; j < nSeg; j++) {
+      const a = i*(nSeg + 1) + j, b = a + nSeg + 1, c = b + 1, d = a + 1;
+      if (i > 0) idx.push(a, d, c);
+      idx.push(a, c, b);
+    }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  g.setIndex(idx);
+  g.boundingSphere = new THREE.Sphere(new THREE.Vector3(...vscale(up, -R_E)), R_E*1.01);
+  return g;
+}
+
+/* ---------- 지구 표면 셰이더: 텍스처 + 발사장 근접 디테일 + 바다 반사 + 구름 + 야간 불빛 + 대기 원근 ---------- */
+const EARTH_VERT = /* glsl */`
+uniform vec3 uPadPos;
+varying vec3 vEarthPos;
+varying vec3 vLocal;
+varying vec3 vViewPos;
+#include <common>
+#include <logdepthbuf_pars_vertex>
+void main(){
+  vLocal = position;
+  vEarthPos = position + uPadPos;
+  vec4 mv = modelViewMatrix*vec4(position, 1.0);
+  vViewPos = mv.xyz;
+  gl_Position = projectionMatrix*mv;
+  #include <logdepthbuf_vertex>
+}
+`;
+const EARTH_FRAG = /* glsl */`
+uniform sampler2D uAlbedo;
+uniform sampler2D uExtra;
+uniform vec3 uSunDir, uCamPos, uPadEast, uPadNorth;
+uniform float uCamAlt, uTime, uExposure, uCloudVis, uWarp;
+varying vec3 vEarthPos;
+varying vec3 vLocal;
+varying vec3 vViewPos;
+#include <common>
+#include <logdepthbuf_pars_fragment>
+${GLSL_NOISE}
+${GLSL_ATMO}
+vec4 sampleEquirect(sampler2D tex, vec3 n){
+  float lon = atan(-n.z, n.x);
+  float lat = asin(clamp(n.y, -1.0, 1.0));
+  vec2 uv = vec2(lon*0.159154943 + 0.5, lat*0.318309886 + 0.5);
+  vec2 uv2 = vec2(fract(uv.x + 0.5) - 0.5, uv.y);
+  vec2 dx = dFdx(uv), dy = dFdy(uv), dx2 = dFdx(uv2), dy2 = dFdy(uv2);
+  if (abs(dx2.x) + abs(dy2.x) < abs(dx.x) + abs(dy.x)) { dx = dx2; dy = dy2; }
+  return textureGrad(tex, uv, dx, dy);
+}
+void main(){
+  #include <logdepthbuf_fragment>
+  vec3 N = normalize(vEarthPos);
+  vec3 S = uSunDir;
+  vec3 V = normalize((vec4(vViewPos, 0.0)*viewMatrix).xyz);
+  float dist = length(vViewPos);
+  vec4 A = sampleEquirect(uAlbedo, N);
+  vec3 albedo = A.rgb*A.rgb;
+  float water = A.a;
+  vec4 X = sampleEquirect(uExtra, N);
+  float cloud = X.r, lights = X.g;
+
+  /* 발사장 근처: 정밀한 상대좌표로 해안선·풀밭·도로·콘크리트 에이프런을 직접 계산 */
+  float dE = dot(vLocal, uPadEast), dN = dot(vLocal, uPadNorth);
+  float dPad = length(vec2(dE, dN));
+  float wLoc = 1.0 - smoothstep(14e3, 40e3, dPad);
+  float sx = 1e9;
+  if (wLoc > 0.0){
+    sx = dE - coastLine(dN);
+    float n1 = snoise(vec3(dE, dN, 0.0)*0.0016);
+    float n2 = snoise(vec3(dE, dN, 3.0)*0.009);
+    float n3 = snoise(vec3(dE, dN, 7.0)*0.05);
+    float seaLoc = smoothstep(-6.0, 6.0, sx + n3*8.0);
+    vec3 grass = mix(vec3(0.040, 0.075, 0.025), vec3(0.085, 0.10, 0.04), n1*0.5 + 0.5);
+    grass = mix(grass, vec3(0.13, 0.12, 0.07), smoothstep(0.35, 0.8, n2)*0.6);
+    grass *= 0.85 + 0.25*n3;
+    float sand = 1.0 - smoothstep(0.0, 60.0 + 20.0*n2, -sx);
+    vec3 landC = mix(grass, vec3(0.38, 0.33, 0.24), sand);
+    float apron = 1.0 - smoothstep(150.0, 158.0, dPad);
+    float road1 = (1.0 - smoothstep(5.0, 6.5, abs(dN)))*step(dE, -140.0)*step(-6000.0, dE);
+    float road2 = 1.0 - smoothstep(4.0, 5.5, abs(sx + 420.0));
+    landC = mix(landC, vec3(0.20, 0.20, 0.19)*(0.9 + 0.1*n3), max(road1, road2));
+    landC = mix(landC, vec3(0.13, 0.13, 0.12)*(0.88 + 0.12*n3 + 0.08*n2), apron);
+    vec3 seaC = mix(vec3(0.03, 0.12, 0.13), vec3(0.006, 0.03, 0.07), clamp(sx/2500.0, 0.0, 1.0));
+    albedo = mix(albedo, mix(landC, seaC, seaLoc), wLoc);
+    water = mix(water, seaLoc, wLoc);
+  }
+  float dn = snoise(vEarthPos*1.0e-4)*0.5 + snoise(vEarthPos*3.1e-4)*0.25;
+  albedo *= 1.0 + dn*0.25*(1.0 - water)*(1.0 - wLoc);
+  cloud = clamp(cloud + (snoise(vEarthPos*2.2e-5)*0.15 + snoise(vEarthPos*7.0e-5)*0.08)*step(0.01, cloud), 0.0, 1.0)*uCloudVis;
+
+  float NdS = dot(N, S);
+  vec3 sunL = SUN_I*sunExtinction(0.0, NdS);
+  float dayF = smoothstep(-0.15, 0.25, NdS);
+  vec3 skyAmb = SUN_I*0.12*vec3(0.55, 0.75, 1.0)*dayF;
+  vec3 col = albedo*(sunL*max(NdS, 0.0) + skyAmb)/PI;
+  if (water > 0.01){
+    vec3 Nw = N;
+    if (wLoc > 0.0 && dist < 20e3){
+      float wt = uTime*0.6;
+      vec2 g = vec2(snoise(vec3(dE*0.02, dN*0.02, wt)), snoise(vec3(dE*0.02 + 17.0, dN*0.02, wt)));
+      Nw = normalize(N + (uPadEast*g.x + uPadNorth*g.y)*0.06*(1.0 - smoothstep(2e3, 20e3, dist)));
+    }
+    vec3 Hh = normalize(S - V);
+    float rough = mix(0.06, 0.22, smoothstep(5e3, 300e3, dist));
+    float nExp = 2.0/(rough*rough) - 2.0;
+    float specD = pow(max(dot(Nw, Hh), 0.0), nExp)*(nExp + 2.0)/(2.0*PI);
+    float fres = 0.02 + 0.98*pow(1.0 - max(dot(Nw, -V), 0.0), 5.0);
+    vec3 spec = sunL*specD*fres*max(dot(Nw, S), 0.0)*0.25;
+    vec3 skyRefl = vec3(0.35, 0.55, 0.9)*SUN_I*0.03*dayF*fres;
+    col += (spec + skyRefl)*water;
+  }
+  vec3 cloudCol = vec3(0.9)*(sunL*max(NdS, 0.0)*0.9 + skyAmb*0.8)/PI;
+  col = mix(col, cloudCol, cloud);
+  float night = smoothstep(0.05, -0.12, NdS);
+  if (night > 0.0 && lights > 0.005){
+    float fp = length(fwidth(vEarthPos));   // 화소 하나가 덮는 지표 길이 [m]
+    float d1 = pow(max(snoise(vEarthPos*1.3e-4), 0.0), 4.0)*3.0;
+    float d2 = pow(max(snoise(vEarthPos*4.5e-4 + 7.0), 0.0), 6.0)*2.0;
+    d1 = mix(d1, 0.06, smoothstep(1500.0, 6000.0, fp));
+    d2 = mix(d2, 0.02, smoothstep(500.0, 2000.0, fp));
+    lights = clamp(lights*(d1 + d2)*1.6, 0.0, 1.0);
+    col += vec3(1.0, 0.72, 0.38)*lights*night*0.8*(1.0 - cloud*0.7)*(1.0 - wLoc);
+  }
+  col += albedo*vec3(0.010, 0.013, 0.022)*night;   // 아주 약한 야간광(달빛) — 밤 쪽 대륙 윤곽
+
+  /* 대기 원근: 카메라 → 지표면 구간의 산란광/투과율 */
+  vec3 O = uCamPos;
+  float b = dot(O, V), cA = dot(O, O) - R_AT*R_AT, t0 = 0.0;
+  if (cA > 0.0){ float disc = b*b - cA; t0 = disc > 0.0 ? max(-b - sqrt(disc), 0.0) : 0.0; }
+  vec3 trans;
+  vec3 ins = atmoInscatter(O, V, t0, max(dist, t0), S, uWarp, 8, trans);
+  col = col*trans + ins;
+  gl_FragColor = vec4(toneMap(col, uExposure), 1.0);
+}
+`;
+
+/* ---------- 하늘(전체 화면): 대기 산란 + 태양 ---------- */
+const SKY_VERT = /* glsl */`
+uniform float uTanHalf, uAspect;
+varying vec3 vDirView;
+void main(){
+  vDirView = vec3(position.x*uTanHalf*uAspect, position.y*uTanHalf, -1.0);
+  gl_Position = vec4(position.xy, 0.0, 1.0);
+}
+`;
+const SKY_FRAG = /* glsl */`
+uniform mat3 uCamRot;
+uniform vec3 uCamPos, uSunDir;
+uniform float uCamAlt, uExposure, uWarp;
+varying vec3 vDirView;
+${GLSL_ATMO}
+void main(){
+  vec3 D = normalize(uCamRot*vDirView);
+  vec3 O = uCamPos;
+  float b = dot(O, D), r2 = dot(O, O);
+  float cP = uCamAlt*(2.0*R_PL + uCamAlt);
+  float discP = b*b - cP;
+  bool hitP = discP > 0.0 && b < 0.0;
+  if (hitP && r2 - b*b < (R_PL - 6000.0)*(R_PL - 6000.0)) discard;
+  vec3 L = vec3(0.0), trans = vec3(1.0);
+  float discA = b*b - (r2 - R_AT*R_AT);
+  if (discA > 0.0){
+    float sq = sqrt(discA), tEx = -b + sq;
+    if (tEx > 0.0){
+      float tEn = max(-b - sq, 0.0);
+      float tEnd = hitP ? cP/(-b + sqrt(discP)) : tEx;
+      L = atmoInscatter(O, D, tEn, tEnd, uSunDir, uWarp, 14, trans);
+    }
+  }
+  if (hitP){ gl_FragColor = vec4(toneMap(L, uExposure), 1.0); return; }
+  float cs = dot(D, uSunDir);
+  L += trans*(smoothstep(0.99996, 0.99999, cs)*400.0 + pow(max(cs, 0.0), 1800.0)*12.0 + pow(max(cs, 0.0), 120.0)*0.35);
+  vec3 c = toneMap(L, uExposure);
+  float a = clamp(max(c.r, max(c.g, c.b))*1.6, 0.0, 1.0);
+  gl_FragColor = vec4(c, a);
+}
+`;
+
+const STAR_VERT = /* glsl */`
+attribute float aSize;
+attribute vec3 aColor;
+uniform float uScale;
+varying vec3 vColor;
+void main(){
+  vColor = aColor;
+  gl_Position = projectionMatrix*modelViewMatrix*vec4(position, 1.0);
+  gl_PointSize = aSize*uScale;
+}
+`;
+const STAR_FRAG = /* glsl */`
+varying vec3 vColor;
+void main(){
+  float r = length(gl_PointCoord - 0.5);
+  gl_FragColor = vec4(vColor*smoothstep(0.5, 0.0, r), 1.0);
+}
+`;
+
+function makeStars() {
+  const N = 7000, pos = new Float32Array(N*3), size = new Float32Array(N), col = new Float32Array(N*3);
+  const gp = vnorm([0.3, 0.6, -0.74]);                 // 은하면 법선(임의)
+  let seed = 12345;
+  const rnd = () => (seed = (seed*16807) % 2147483647) / 2147483647;
+  for (let i = 0; i < N; i++) {
+    let d;
+    if (i < N*0.4) {                                   // 은하수 띠에 집중
+      const u = rnd()*2*Math.PI;
+      const a1 = vnorm(vcross(gp, [0, 0, 1])), a2 = vcross(gp, a1);
+      const off = (rnd() + rnd() + rnd() - 1.5)*0.18;
+      d = vnorm(vadd(vadd(vscale(a1, Math.cos(u)), vscale(a2, Math.sin(u))), vscale(gp, off)));
+    } else {
+      const z = rnd()*2 - 1, u = rnd()*2*Math.PI, s = Math.sqrt(1 - z*z);
+      d = [s*Math.cos(u), z, s*Math.sin(u)];
+    }
+    pos.set(vscale(d, 1e5), i*3);
+    const m = Math.pow(rnd(), 7);
+    size[i] = 1.2 + 3.2*m;
+    const temp = rnd();
+    const c = temp < 0.2 ? [0.75, 0.82, 1.0] : temp < 0.75 ? [1.0, 0.97, 0.92] : [1.0, 0.82, 0.62];
+    const br = 0.25 + 0.95*m + 0.15*rnd();
+    col.set([c[0]*br, c[1]*br, c[2]*br], i*3);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  g.setAttribute('aSize', new THREE.BufferAttribute(size, 1));
+  g.setAttribute('aColor', new THREE.BufferAttribute(col, 3));
+  const m = new THREE.ShaderMaterial({ uniforms: { uScale: { value: 1 } }, vertexShader: STAR_VERT, fragmentShader: STAR_FRAG,
+    depthTest: false, depthWrite: false, blending: THREE.AdditiveBlending });
+  const pts = new THREE.Points(g, m);
+  pts.frustumCulled = false; pts.renderOrder = -10;
+  return pts;
+}
+
+/* ============================ 절차적 텍스처 (캔버스) ============================ */
+function prng(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function canvasTex(w, h, draw, opt = {}) {
+  const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+  draw(cv.getContext('2d'), w, h);
+  const t = new THREE.CanvasTexture(cv);
+  if (opt.srgb !== false) t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = 8;
+  if (opt.repeat) { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(opt.repeat[0], opt.repeat[1]); }
+  return t;
+}
+function makeTextures() {
+  const R = prng(7);
+  const FONT = '"Segoe UI", "Malgun Gothic", Arial, sans-serif';
+  const panelNoise = (c, w, h, n) => { for (let i = 0; i < n; i++) { c.fillStyle = `rgba(0,0,0,${0.01 + R()*0.02})`; c.fillRect(R()*w, R()*h, 20 + R()*120, 20 + R()*200); } };
+  const body1 = canvasTex(512, 1206, (c, w, h) => {
+    c.fillStyle = '#ecebe6'; c.fillRect(0, 0, w, h); panelNoise(c, w, h, 40);
+    c.fillStyle = 'rgba(0,0,0,0.13)';
+    for (let y = 100; y < h; y += 108) c.fillRect(0, y, w, 2);
+    for (let x = 64; x < w; x += 128) c.fillRect(x, 0, 1, h);
+    c.fillStyle = '#1d1f23'; c.fillRect(0, 0, w, 34);
+    c.fillRect(0, 70, w/4, 90); c.fillRect(w/2, 70, w/4, 90);
+    c.save(); c.translate(w/2, 255);
+    c.strokeStyle = '#1b2f5e'; c.lineWidth = 7; c.beginPath(); c.arc(0, 0, 36, 0, Math.PI*2); c.stroke();
+    c.strokeStyle = '#2fa8dc'; c.lineWidth = 5; c.beginPath(); c.ellipse(0, 0, 58, 19, -0.4, 0, Math.PI*2); c.stroke();
+    c.restore();
+    c.save(); c.translate(w/2 + 26, 760); c.rotate(-Math.PI/2);
+    c.fillStyle = '#16264d'; c.font = `bold 76px ${FONT}`; c.textAlign = 'center'; c.fillText('VIBE-2', 0, 0); c.restore();
+    const g = c.createLinearGradient(0, h, 0, h - 170); g.addColorStop(0, 'rgba(40,36,32,0.55)'); g.addColorStop(1, 'rgba(40,36,32,0)');
+    c.fillStyle = g; c.fillRect(0, h - 170, w, 170);
+  });
+  const body2 = canvasTex(512, 516, (c, w, h) => {
+    c.fillStyle = '#ecebe6'; c.fillRect(0, 0, w, h); panelNoise(c, w, h, 16);
+    c.fillStyle = 'rgba(0,0,0,0.13)'; for (let y = 120; y < h; y += 130) c.fillRect(0, y, w, 2);
+    c.fillStyle = '#1d1f23'; c.fillRect(0, 0, w, 18); c.fillRect(0, h - 46, w, 46);
+    c.fillStyle = '#2fa8dc'; c.fillRect(0, 150, w, 12);
+    c.fillStyle = '#16264d'; c.font = `bold 34px ${FONT}`; c.textAlign = 'center'; c.fillText('STAGE 2', w/2, 236);
+  });
+  const fairing = canvasTex(512, 512, (c, w, h) => {
+    c.fillStyle = '#f1f0ec'; c.fillRect(0, 0, w, h); panelNoise(c, w, h, 12);
+    c.fillStyle = '#16264d'; c.fillRect(0, h - 40, w, 22);
+    c.fillStyle = 'rgba(0,0,0,0.25)'; c.fillRect(0, 0, 2, h); c.fillRect(w - 2, 0, 2, h);
+    c.save(); c.translate(w/2, 250);
+    c.strokeStyle = '#16264d'; c.lineWidth = 8; c.beginPath(); c.arc(0, 0, 44, 0, Math.PI*2); c.stroke();
+    c.strokeStyle = '#2fa8dc'; c.lineWidth = 6; c.beginPath(); c.ellipse(0, 0, 72, 24, -0.4, 0, Math.PI*2); c.stroke();
+    c.restore();
+    c.fillStyle = '#16264d'; c.font = `800 46px ${FONT}`; c.textAlign = 'center'; c.fillText('VIBE', w/2, 360);
+  });
+  const carbon = canvasTex(64, 64, (c, w, h) => {
+    for (let y = 0; y < h; y += 8) for (let x = 0; x < w; x += 8) { c.fillStyle = ((x + y)/8) % 2 ? '#24272c' : '#1a1c20'; c.fillRect(x, y, 8, 8); }
+  }, { repeat: [10, 2] });
+  const concrete = canvasTex(1024, 1024, (c, w, h) => {
+    c.fillStyle = '#8f8e89'; c.fillRect(0, 0, w, h);
+    for (let i = 0; i < 1600; i++) { const v = 110 + R()*60 | 0; c.fillStyle = `rgba(${v},${v},${v-4},${0.05 + R()*0.08})`; const s = 4 + R()*40; c.fillRect(R()*w, R()*h, s, s); }
+    c.fillStyle = 'rgba(40,40,40,0.35)';
+    for (let p = 0; p <= w; p += 68) { c.fillRect(p, 0, 2, h); c.fillRect(0, p, w, 2); }
+    const g = c.createRadialGradient(w/2, h/2, 10, w/2, h/2, 330); g.addColorStop(0, 'rgba(20,18,16,0.85)'); g.addColorStop(0.5, 'rgba(30,26,22,0.45)'); g.addColorStop(1, 'rgba(30,26,22,0)');
+    c.fillStyle = g; c.fillRect(0, 0, w, h);
+    c.fillStyle = 'rgba(30,26,22,0.5)'; c.fillRect(0, h/2 - 40, w, 80);
+    c.strokeStyle = '#d8b13a'; c.lineWidth = 8; c.strokeRect(30, 30, w - 60, h - 60);
+    c.fillStyle = '#d8d6cf'; c.font = `bold 60px ${FONT}`; c.textAlign = 'center'; c.fillText('PAD-1', w/2, h - 70);
+  });
+  const building = canvasTex(256, 256, (c, w, h) => {
+    c.fillStyle = '#c4c8cd'; c.fillRect(0, 0, w, h);
+    for (let y = 18; y < h; y += 42) for (let x = 10; x < w; x += 28) { c.fillStyle = R() < 0.25 ? '#4a5868' : '#2c3644'; c.fillRect(x, y, 16, 20); }
+  }, { repeat: [3, 2] });
+  const smoke = canvasTex(128, 128, (c, w, h) => {
+    for (let i = 0; i < 16; i++) {
+      const a = R()*Math.PI*2, rr = R()*0.2*w, x = w/2 + Math.cos(a)*rr, y = h/2 + Math.sin(a)*rr, r = (0.16 + R()*0.16)*w;
+      const g = c.createRadialGradient(x, y, 0, x, y, r);
+      g.addColorStop(0, 'rgba(255,255,255,0.55)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+      c.fillStyle = g; c.fillRect(0, 0, w, h);
+    }
+    c.globalCompositeOperation = 'source-atop';
+    const g = c.createLinearGradient(0, 0, 0, h); g.addColorStop(0, '#ffffff'); g.addColorStop(1, '#7a7a7a');
+    c.fillStyle = g; c.fillRect(0, 0, w, h);
+  }, { srgb: false });
+  const glow = canvasTex(64, 64, (c, w, h) => {
+    const g = c.createRadialGradient(w/2, h/2, 0, w/2, h/2, w/2);
+    g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(0.25, 'rgba(255,255,255,0.55)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+    c.fillStyle = g; c.fillRect(0, 0, w, h);
+  }, { srgb: false });
+  return { body1, body2, fairing, carbon, concrete, building, smoke, glow };
+}
+
+/* ============================ 로켓 모델 ============================ */
+function lathePts(arr) { return arr.map(([r, y]) => new THREE.Vector2(r, y)); }
+function buildRocket(T) {
+  const white1 = new THREE.MeshStandardMaterial({ map: T.body1, roughness: 0.5, metalness: 0.05 });
+  const white2 = new THREE.MeshStandardMaterial({ map: T.body2, roughness: 0.5, metalness: 0.05 });
+  const fairMat = new THREE.MeshStandardMaterial({ map: T.fairing, roughness: 0.45, metalness: 0.05, side: THREE.DoubleSide });
+  const dark = new THREE.MeshStandardMaterial({ color: 0x2a2c31, roughness: 0.6, metalness: 0.3 });
+  const carbon = new THREE.MeshStandardMaterial({ map: T.carbon, color: 0xffffff, roughness: 0.55, metalness: 0.2, side: THREE.DoubleSide });
+  const nozzle1 = new THREE.MeshStandardMaterial({ color: 0x3e3a36, roughness: 0.45, metalness: 0.7, side: THREE.DoubleSide, emissive: 0x000000 });
+  const nozzle2 = new THREE.MeshStandardMaterial({ color: 0x9a8f84, roughness: 0.35, metalness: 0.75, side: THREE.DoubleSide, emissive: 0x000000 });
+  const gold = new THREE.MeshStandardMaterial({ color: 0xc9a24a, roughness: 0.35, metalness: 0.85 });
+  const panel = new THREE.MeshStandardMaterial({ color: 0x1b2a6b, roughness: 0.3, metalness: 0.4 });
+  const grey = new THREE.MeshStandardMaterial({ color: 0x8d9096, roughness: 0.5, metalness: 0.4 });
+  const add = (parent, geo, mat, x = 0, y = 0, z = 0) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = true; m.receiveShadow = true; parent.add(m); return m; };
+
+  // ---- 1단 (기준점: 노즐 출구 y=0, 피벗은 무게중심 S1_COM) ----
+  const s1 = new THREE.Group(), s1m = new THREE.Group(); s1m.position.y = -S1_COM; s1.add(s1m);
+  const bell1 = new THREE.LatheGeometry(lathePts([[0.45,0],[0.40,0.30],[0.33,0.65],[0.25,1.05],[0.19,1.40],[0.17,1.55],[0.22,1.70],[0.24,1.80],[0.24,2.1]]), 28);
+  add(s1m, bell1, nozzle1);
+  for (let k = 0; k < 4; k++) { const a = k*Math.PI/2 + Math.PI/4; add(s1m, bell1, nozzle1, Math.cos(a)*0.95, 0, Math.sin(a)*0.95); }
+  add(s1m, new THREE.CylinderGeometry(1.5, 1.62, 2.0, 48, 1, true), dark, 0, 2.8);
+  const heat = add(s1m, new THREE.CircleGeometry(1.62, 48), dark, 0, 1.8); heat.rotation.x = Math.PI/2;
+  add(s1m, new THREE.CylinderGeometry(1.5, 1.5, 22.2, 48, 1, true, Math.PI), white1, 0, 14.9);
+  add(s1m, new THREE.CylinderGeometry(1.5, 1.5, 4.0, 48, 1, true), carbon, 0, 28.0);
+  const dome1 = add(s1m, new THREE.SphereGeometry(1.48, 32, 12, 0, Math.PI*2, 0, Math.PI/2), grey, 0, 26.0); dome1.scale.y = 0.45;
+  const finShape = new THREE.Shape(); finShape.moveTo(0, 6.0); finShape.lineTo(0, 2.0); finShape.lineTo(1.25, 2.3); finShape.lineTo(1.25, 3.5); finShape.closePath();
+  const finGeo = new THREE.ExtrudeGeometry(finShape, { depth: 0.12, bevelEnabled: false }); finGeo.translate(0, 0, -0.06);
+  for (let k = 0; k < 4; k++) {
+    const a = k*Math.PI/2 + Math.PI/4, fg = new THREE.Group();
+    fg.rotation.y = a; s1m.add(fg);
+    const f = add(fg, finGeo, dark, 1.48, 0, 0);
+  }
+
+  // ---- 2단 (기준점: 2단 노즐 출구 y=0) ----
+  const s2 = new THREE.Group();
+  add(s2, new THREE.LatheGeometry(lathePts([[1.05,0],[0.95,0.4],[0.80,0.9],[0.60,1.5],[0.40,2.0],[0.25,2.35],[0.22,2.5],[0.30,2.7],[0.32,3.0]]), 36), nozzle2);
+  add(s2, new THREE.CylinderGeometry(1.5, 0.7, 0.6, 40, 1, true), dark, 0, 3.2);
+  const dome2 = add(s2, new THREE.SphereGeometry(1.48, 32, 12, 0, Math.PI*2, Math.PI/2, Math.PI/2), grey, 0, 3.5); dome2.scale.y = 0.4;
+  add(s2, new THREE.CylinderGeometry(1.5, 1.5, 9.5, 48, 1, true, Math.PI), white2, 0, 8.25);
+  add(s2, new THREE.CylinderGeometry(1.0, 1.5, 0.6, 40), dark, 0, 13.3);
+  // 탑재 위성
+  const sat = new THREE.Group(); sat.position.y = 13.6; s2.add(sat);
+  add(sat, new THREE.BoxGeometry(1.8, 2.4, 1.8), gold, 0, 1.2);
+  add(sat, new THREE.BoxGeometry(0.06, 2.2, 1.5), panel, 0.95, 1.2);
+  add(sat, new THREE.BoxGeometry(0.06, 2.2, 1.5), panel, -0.95, 1.2);
+  const dish = add(sat, new THREE.SphereGeometry(0.62, 20, 8, 0, Math.PI*2, 0, 0.7), grey, 0, 2.05); dish.scale.y = 0.6;
+  // 페어링 (앞/뒤 두 쪽)
+  const fp = []; const prof = [[1.5,13.0],[1.6,13.3],[1.68,13.6],[1.68,14.3],[1.68,15.0],[1.68,15.7],[1.68,16.4],[1.68,17.2],[1.64,17.9],[1.54,18.6],[1.38,19.3],[1.16,19.95],[0.88,20.5],[0.56,20.98],[0.24,21.35],[0.0,21.55]];
+  for (const [r, y] of prof) fp.push(new THREE.Vector2(r, y));
+  const fairings = [];
+  for (const k of [0, 1]) {
+    const piv = new THREE.Group(); piv.position.y = FAIRING_COM; s2.add(piv);
+    const m = add(piv, new THREE.LatheGeometry(fp, 32, k === 0 ? -Math.PI/2 : Math.PI/2, Math.PI), fairMat, 0, -FAIRING_COM);
+    fairings.push({ pivot: piv, mesh: m });
+  }
+  return { s1, s1m, s2, sat, fairings, nozzle1, nozzle2, mats: [white1, white2, fairMat, dark, carbon, nozzle1, nozzle2, gold, panel, grey] };
+}
+
+/* ============================ 발사장 모델 (로컬 ENU: X=동, Y=상, Z=남) ============================ */
+function buildPad(T) {
+  const g = new THREE.Group();
+  const add = (geo, mat, x, y, z, parent = g) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = true; m.receiveShadow = true; parent.add(m); return m; };
+  const concrete = new THREE.MeshStandardMaterial({ map: T.concrete, roughness: 0.95, metalness: 0 });
+  const steel = new THREE.MeshStandardMaterial({ color: 0x6b7078, roughness: 0.6, metalness: 0.45 });
+  const red = new THREE.MeshStandardMaterial({ color: 0x9e2b25, roughness: 0.6, metalness: 0.3 });
+  const whiteM = new THREE.MeshStandardMaterial({ color: 0xe6e6e2, roughness: 0.5, metalness: 0.1 });
+  const pit = new THREE.MeshStandardMaterial({ color: 0x0d0d0d, roughness: 1 });
+  const bldg = new THREE.MeshStandardMaterial({ map: T.building, roughness: 0.8 });
+  const slab = add(new THREE.BoxGeometry(90, 1.2, 90), concrete, 0, 0, 0); slab.castShadow = false;
+  const trench = add(new THREE.PlaneGeometry(50, 9), pit, 0, 0.62, 0); trench.rotation.x = -Math.PI/2; trench.castShadow = false;
+  // 발사 마운트
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) add(new THREE.BoxGeometry(1.3, 6.4, 1.3), steel, sx*3.6, 3.8, sz*3.6);
+  for (const s of [-1, 1]) { add(new THREE.BoxGeometry(8.6, 0.6, 2.0), steel, 0, 6.7, s*3.3); add(new THREE.BoxGeometry(2.0, 0.6, 4.6), steel, s*3.3, 6.7, 0); }
+  // 엄빌리컬 타워 (인스턴싱)
+  const tx = 3, tz = -10, TH = 52;
+  const mats = [];
+  const M = new THREE.Matrix4(), Q = new THREE.Quaternion(), S = new THREE.Vector3(), P = new THREE.Vector3();
+  const push = (px, py, pz, sx, sy, sz, rx = 0, ry = 0, rz = 0) => { Q.setFromEuler(new THREE.Euler(rx, ry, rz)); M.compose(P.set(px, py, pz), Q, S.set(sx, sy, sz)); mats.push(M.clone()); };
+  for (const cx of [-2, 2]) for (const cz of [-2, 2]) push(tx + cx, TH/2, tz + cz, 0.45, TH, 0.45);
+  for (let y = 4; y <= TH; y += 4) {
+    push(tx, y, tz - 2, 4.2, 0.25, 0.25); push(tx, y, tz + 2, 4.2, 0.25, 0.25);
+    push(tx - 2, y, tz, 0.25, 0.25, 4.2); push(tx + 2, y, tz, 0.25, 0.25, 4.2);
+    const d = (y/4) % 2 ? 1 : -1, len = Math.hypot(4, 4);
+    push(tx, y - 2, tz - 2, len, 0.18, 0.18, 0, 0, d*Math.PI/4); push(tx, y - 2, tz + 2, len, 0.18, 0.18, 0, 0, -d*Math.PI/4);
+    push(tx - 2, y - 2, tz, 0.18, 0.18, len, d*Math.PI/4, 0, 0); push(tx + 2, y - 2, tz, 0.18, 0.18, len, -d*Math.PI/4, 0, 0);
+  }
+  for (const y of [20, 32, 44, TH]) push(tx, y + 0.15, tz, 4.6, 0.3, 4.6);
+  push(tx, TH + 6, tz, 0.3, 12, 0.3);
+  const tower = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), steel, mats.length);
+  mats.forEach((m, i) => tower.setMatrixAt(i, m));
+  tower.castShadow = true; tower.receiveShadow = true; g.add(tower);
+  // 스윙 암 (T-2초부터 회전하며 후퇴)
+  const arms = [];
+  const ax = tx - 1.5, az = tz + 2.2, toRocket = Math.atan2(0 - ax, -1.7 - az);
+  for (const y of [27.2, 38.2, 46.2]) {
+    const piv = new THREE.Group(); piv.position.set(ax, y, az); piv.rotation.y = toRocket; g.add(piv);
+    const L = Math.hypot(ax, -1.7 - az);
+    const arm = add(new THREE.BoxGeometry(1.1, 1.2, L), red, 0, 0, L/2, piv);
+    add(new THREE.BoxGeometry(2.0, 2.0, 0.8), red, 0, 0, L - 0.2, piv);
+    arms.push({ pivot: piv, base: toRocket });
+  }
+  // 피뢰침 마스트 + 가공선
+  const masts = [[-38, -38], [40, -36], [42, 34]];
+  for (const [x, z] of masts) add(new THREE.CylinderGeometry(0.3, 0.45, 72, 10), steel, x, 36, z);
+  const wireMat = new THREE.LineBasicMaterial({ color: 0x2a2d33 });
+  for (let i = 0; i < masts.length; i++) {
+    const a = masts[i], b = masts[(i + 1) % masts.length], pts = [];
+    for (let k = 0; k <= 16; k++) { const f = k/16; pts.push(new THREE.Vector3(a[0] + (b[0]-a[0])*f, 71.5 - 9*Math.sin(Math.PI*f), a[1] + (b[1]-a[1])*f)); }
+    g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), wireMat));
+  }
+  // 급수탑, 추진제 탱크, 건물
+  add(new THREE.CylinderGeometry(0.8, 0.8, 32, 14), whiteM, -55, 16, -20);
+  add(new THREE.SphereGeometry(4.5, 24, 14), whiteM, -55, 36, -20);
+  for (const z of [-30, -42]) {
+    add(new THREE.SphereGeometry(4, 24, 14), whiteM, -40, 6.5, z);
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) add(new THREE.CylinderGeometry(0.25, 0.25, 4, 6), steel, -40 + sx*2.6, 1.6, z + sz*2.6);
+  }
+  add(new THREE.BoxGeometry(26, 14, 18), bldg, -160, 7, -60);
+  add(new THREE.BoxGeometry(60, 48, 44), bldg, -300, 24, -380);
+  add(new THREE.BoxGeometry(18, 9, 12), bldg, 110, 4.5, -140);
+  return { group: g, arms, mats: [concrete, steel, red, whiteM, bldg] };
+}
+
+/* ============================ 효과: 엔진 화염 ============================ */
+const PLUME_VERT = /* glsl */`
+uniform float uTime, uLen, uR0, uR1, uSeed;
+varying float vT;
+varying vec3 vN;
+varying vec3 vV;
+#include <common>
+#include <logdepthbuf_pars_vertex>
+void main(){
+  float t = -position.y;
+  float r = mix(uR0, uR1, pow(t, 0.55));
+  r *= 1.0 + 0.05*sin(uTime*47.0 + t*23.0 + uSeed)*t;
+  vec3 p = vec3(position.x*r, -t*uLen, position.z*r);
+  vT = t;
+  vec4 mv = modelViewMatrix*vec4(p, 1.0);
+  vV = -mv.xyz;
+  vN = normalMatrix*vec3(position.x, 0.0, position.z);
+  gl_Position = projectionMatrix*mv;
+  #include <logdepthbuf_vertex>
+}
+`;
+const PLUME_FRAG = /* glsl */`
+uniform float uTime, uIntensity, uDiamonds, uSeed;
+uniform vec3 uCore, uMid, uTail;
+varying float vT;
+varying vec3 vN;
+varying vec3 vV;
+#include <logdepthbuf_pars_fragment>
+void main(){
+  #include <logdepthbuf_fragment>
+  float facing = abs(dot(normalize(vN), normalize(vV)));
+  float t = vT;
+  vec3 col = mix(uCore, uMid, smoothstep(0.0, 0.3, t));
+  col = mix(col, uTail, smoothstep(0.25, 0.95, t));
+  float diam = uDiamonds*pow(0.5 + 0.5*cos(t*6.2831*6.0), 8.0)*(1.0 - smoothstep(0.05, 0.6, t));
+  float flick = 0.82 + 0.18*sin(uTime*53.0 + t*31.0 + uSeed)*sin(uTime*37.0 - t*17.0);
+  float a = pow(facing, 1.6)*pow(1.0 - t, 1.5)*smoothstep(0.0, 0.04, t + 0.02)*uIntensity*flick*(1.0 + diam*2.5);
+  gl_FragColor = vec4(col*a, 1.0);
+}
+`;
+function makePlume(colors, seed) {
+  const geo = new THREE.CylinderGeometry(1, 1, 1, 32, 40, true); geo.translate(0, -0.5, 0);
+  const mk = () => new THREE.ShaderMaterial({
+    uniforms: { uTime: { value: 0 }, uLen: { value: 10 }, uR0: { value: 1 }, uR1: { value: 1.5 }, uSeed: { value: seed },
+      uIntensity: { value: 0 }, uDiamonds: { value: 0 },
+      uCore: { value: new THREE.Color(...colors.core) }, uMid: { value: new THREE.Color(...colors.mid) }, uTail: { value: new THREE.Color(...colors.tail) } },
+    vertexShader: PLUME_VERT, fragmentShader: PLUME_FRAG, transparent: true, depthWrite: false,
+    blending: THREE.AdditiveBlending, side: THREE.DoubleSide, toneMapped: false });
+  const outer = new THREE.Mesh(geo, mk()), core = new THREE.Mesh(geo, mk());
+  outer.frustumCulled = core.frustumCulled = false;
+  core.material.uniforms.uCore.value.setRGB(1.0, 0.97, 0.9);
+  const g = new THREE.Group(); g.add(outer, core); g.visible = false;
+  return { group: g, outer, core };
+}
+/* 대기압에 따른 화염 형상: 진공에 가까울수록 넓게 퍼지고 희미해진다 */
+function setPlume(pl, throttle, p, time, base) {
+  const pr = clamp(p/P0, 0, 1), vac = 1 - pr;
+  const on = throttle > 0.01;
+  pl.group.visible = on;
+  if (!on) return;
+  const E = 1.1 + base.expand*Math.pow(vac, 1.5);
+  const L = base.len*(0.55 + 0.45*throttle)*(1 + 1.6*vac);
+  const o = pl.outer.material.uniforms, c = pl.core.material.uniforms;
+  o.uTime.value = c.uTime.value = time;
+  o.uLen.value = L; o.uR0.value = base.r0; o.uR1.value = base.r0*E;
+  o.uIntensity.value = throttle*base.bright/Math.sqrt(E);
+  o.uDiamonds.value = base.diamonds*Math.sqrt(pr);
+  c.uLen.value = L*0.32; c.uR0.value = base.r0*0.75; c.uR1.value = base.r0*(0.5 + 0.4*E);
+  c.uIntensity.value = throttle*base.bright*1.3;
+  c.uDiamonds.value = base.diamonds*Math.sqrt(pr)*0.6;
+}
+
+/* ============================ 효과: 파티클 (인스턴스 빌보드) ============================ */
+const PART_VERT = /* glsl */`
+attribute vec3 iOffset;
+attribute vec4 iData;   // size, rotation, alpha, heat
+attribute vec3 iColor;
+varying vec2 vUv;
+varying float vAlpha;
+varying float vHeat;
+varying vec3 vColor;
+#include <common>
+#include <logdepthbuf_pars_vertex>
+void main(){
+  vec4 mv = modelViewMatrix*vec4(iOffset, 1.0);
+  float c = cos(iData.y), s = sin(iData.y);
+  vec2 q = position.xy;
+  mv.xy += vec2(c*q.x - s*q.y, s*q.x + c*q.y)*iData.x;
+  gl_Position = projectionMatrix*mv;
+  vUv = position.xy + 0.5;
+  vAlpha = iData.z; vHeat = iData.w; vColor = iColor;
+  #include <logdepthbuf_vertex>
+}
+`;
+const PART_FRAG_SMOKE = /* glsl */`
+uniform sampler2D uTex;
+uniform vec3 uSun, uAmb;
+varying vec2 vUv;
+varying float vAlpha;
+varying float vHeat;
+varying vec3 vColor;
+#include <logdepthbuf_pars_fragment>
+void main(){
+  #include <logdepthbuf_fragment>
+  vec4 tx = texture2D(uTex, vUv);
+  float a = tx.a*vAlpha;
+  if (a < 0.004) discard;
+  vec3 lit = vColor*(uAmb + uSun*(0.55 + 0.45*tx.r))*1.2 + vec3(1.0, 0.5, 0.18)*vHeat*1.6;
+  gl_FragColor = vec4(lit*a, a);
+}
+`;
+const PART_FRAG_ADD = /* glsl */`
+uniform sampler2D uTex;
+varying vec2 vUv;
+varying float vAlpha;
+varying float vHeat;
+varying vec3 vColor;
+#include <logdepthbuf_pars_fragment>
+void main(){
+  #include <logdepthbuf_fragment>
+  float a = texture2D(uTex, vUv).a*vAlpha;
+  gl_FragColor = vec4(vColor*a, 1.0);
+}
+`;
+class Particles {
+  constructor(max, tex, additive, attached) {
+    this.max = max; this.n = 0; this.attached = attached;
+    this.p = new Float64Array(max*3); this.v = new Float32Array(max*3);
+    this.age = new Float32Array(max); this.life = new Float32Array(max);
+    this.s0 = new Float32Array(max); this.s1 = new Float32Array(max); this.a0 = new Float32Array(max);
+    this.rot = new Float32Array(max); this.rotV = new Float32Array(max);
+    this.col = new Float32Array(max*3); this.heat = new Float32Array(max);
+    this.drag = new Float32Array(max); this.rise = new Float32Array(max); this.fadeIn = new Float32Array(max);
+    const geo = new THREE.InstancedBufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array([-0.5,-0.5,0, 0.5,-0.5,0, 0.5,0.5,0, -0.5,0.5,0]), 3));
+    geo.setIndex([0, 1, 2, 0, 2, 3]);
+    const mkAttr = (n) => { const a = new THREE.InstancedBufferAttribute(new Float32Array(max*n), n); a.setUsage(THREE.DynamicDrawUsage); return a; };
+    this.aOff = mkAttr(3); this.aDat = mkAttr(4); this.aCol = mkAttr(3);
+    geo.setAttribute('iOffset', this.aOff); geo.setAttribute('iData', this.aDat); geo.setAttribute('iColor', this.aCol);
+    geo.instanceCount = 0;
+    this.mat = new THREE.ShaderMaterial({
+      uniforms: { uTex: { value: tex }, uSun: { value: new THREE.Color(1, 1, 1) }, uAmb: { value: new THREE.Color(0.3, 0.35, 0.4) } },
+      vertexShader: PART_VERT, fragmentShader: additive ? PART_FRAG_ADD : PART_FRAG_SMOKE,
+      transparent: true, depthWrite: false, toneMapped: false,
+      blending: additive ? THREE.AdditiveBlending : THREE.CustomBlending,
+      blendSrc: THREE.OneFactor, blendDst: THREE.OneMinusSrcAlphaFactor });
+    this.mesh = new THREE.Mesh(geo, this.mat);
+    this.mesh.frustumCulled = false;
+    this.mesh.renderOrder = additive ? 3 : 2;
+    this.geo = geo;
+  }
+  clear() { this.n = 0; this.geo.instanceCount = 0; }
+  spawn(px, py, pz, vx, vy, vz, life, s0, s1, a0, r, g, b, heat = 0, drag = 0.5, rise = 0, fadeIn = 0.06) {
+    if (this.n >= this.max) return;
+    const i = this.n++;
+    this.p[i*3] = px; this.p[i*3+1] = py; this.p[i*3+2] = pz;
+    this.v[i*3] = vx; this.v[i*3+1] = vy; this.v[i*3+2] = vz;
+    this.age[i] = 0; this.life[i] = life; this.s0[i] = s0; this.s1[i] = s1; this.a0[i] = a0;
+    this.rot[i] = Math.random()*6.283; this.rotV[i] = (Math.random() - 0.5)*0.4;
+    this.col[i*3] = r; this.col[i*3+1] = g; this.col[i*3+2] = b;
+    this.heat[i] = heat; this.drag[i] = drag; this.rise[i] = rise; this.fadeIn[i] = fadeIn;
+  }
+  kill(i) {
+    const j = --this.n; if (i === j) return;
+    for (let k = 0; k < 3; k++) { this.p[i*3+k] = this.p[j*3+k]; this.v[i*3+k] = this.v[j*3+k]; this.col[i*3+k] = this.col[j*3+k]; }
+    this.age[i] = this.age[j]; this.life[i] = this.life[j]; this.s0[i] = this.s0[j]; this.s1[i] = this.s1[j]; this.a0[i] = this.a0[j];
+    this.rot[i] = this.rot[j]; this.rotV[i] = this.rotV[j]; this.heat[i] = this.heat[j]; this.drag[i] = this.drag[j]; this.rise[i] = this.rise[j]; this.fadeIn[i] = this.fadeIn[j];
+  }
+  /* dtAge: 수명 진행, dtMove: 이동 적분, origin: 카메라(부착형은 기준점) 오프셋 */
+  update(dtAge, dtMove, cam, anchor) {
+    const off = this.aOff.array, dat = this.aDat.array, col = this.aCol.array;
+    for (let i = 0; i < this.n; i++) {
+      this.age[i] += dtAge;
+      if (this.age[i] >= this.life[i]) { this.kill(i); i--; continue; }
+      const i3 = i*3;
+      if (dtMove > 0) {
+        const k = Math.exp(-this.drag[i]*dtMove);
+        let ux = 0, uy = 0, uz = 0;
+        if (this.rise[i] !== 0) {
+          const px = this.p[i3], py = this.p[i3+1], pz = this.p[i3+2];
+          if (this.attached) { ux = PAD.up[0]; uy = PAD.up[1]; uz = PAD.up[2]; }
+          else { const l = Math.hypot(px, py, pz); ux = px/l; uy = py/l; uz = pz/l; }
+        }
+        for (let c = 0; c < 3; c++) {
+          this.v[i3+c] = this.v[i3+c]*k + (c === 0 ? ux : c === 1 ? uy : uz)*this.rise[i]*dtMove;
+          this.p[i3+c] += this.v[i3+c]*dtMove;
+        }
+      }
+      const f = this.age[i]/this.life[i];
+      const size = this.s0[i] + (this.s1[i] - this.s0[i])*(1 - (1 - f)*(1 - f));
+      const alpha = this.a0[i]*smooth01(f/Math.max(this.fadeIn[i], 1e-3))*(1 - smooth01((f - 0.45)/0.55));
+      this.rot[i] += this.rotV[i]*dtAge;
+      if (!this.attached) {   // 지면 아래로 내려가지 않게
+        const px = this.p[i3], py = this.p[i3+1], pz = this.p[i3+2], l = Math.hypot(px, py, pz), lift = R_E + size*0.28 - l;
+        if (lift > 0) { const s = (l + lift)/l; this.p[i3] *= s; this.p[i3+1] *= s; this.p[i3+2] *= s; }
+      }
+      const bx = this.attached ? anchor[0] : 0, by = this.attached ? anchor[1] : 0, bz = this.attached ? anchor[2] : 0;
+      off[i3] = this.p[i3] + bx - cam[0]; off[i3+1] = this.p[i3+1] + by - cam[1]; off[i3+2] = this.p[i3+2] + bz - cam[2];
+      dat[i*4] = size; dat[i*4+1] = this.rot[i]; dat[i*4+2] = alpha; dat[i*4+3] = this.heat[i]*Math.exp(-this.age[i]*2.5);
+      col[i3] = this.col[i3]; col[i3+1] = this.col[i3+1]; col[i3+2] = this.col[i3+2];
+    }
+    this.geo.instanceCount = this.n;
+    this.aOff.needsUpdate = this.aDat.needsUpdate = this.aCol.needsUpdate = true;
+  }
+}
+
+/* 음속 돌파 시 증기 원뿔 (Prandtl–Glauert 응결) */
+function makeVaporCone() {
+  const geo = new THREE.CylinderGeometry(1.9, 7.0, 8.5, 48, 8, true);
+  const mat = new THREE.ShaderMaterial({
+    uniforms: { uI: { value: 0 }, uTime: { value: 0 } },
+    vertexShader: `varying vec3 vP; varying vec3 vN; varying vec3 vV;
+      #include <common>
+      #include <logdepthbuf_pars_vertex>
+      void main(){ vP = position; vec4 mv = modelViewMatrix*vec4(position,1.0); vV = -mv.xyz; vN = normalMatrix*normal; gl_Position = projectionMatrix*mv;
+      #include <logdepthbuf_vertex>
+      }`,
+    fragmentShader: `uniform float uI, uTime; varying vec3 vP; varying vec3 vN; varying vec3 vV;
+      #include <logdepthbuf_pars_fragment>
+      void main(){
+        #include <logdepthbuf_fragment>
+        float f = abs(dot(normalize(vN), normalize(vV)));
+        float t = (vP.y + 4.25)/8.5;
+        float n = 0.6 + 0.4*sin(atan(vP.z, vP.x)*9.0 + uTime*3.0)*sin(vP.y*2.3 - uTime*5.0);
+        float a = uI*(0.55 + 0.45*(1.0 - f))*pow(smoothstep(0.0, 0.9, t), 1.5)*(1.0 - smoothstep(0.9, 1.0, t))*n*0.9;
+        gl_FragColor = vec4(vec3(0.93, 0.95, 1.0)*a, a);
+      }`,
+    transparent: true, depthWrite: false, side: THREE.DoubleSide, toneMapped: false,
+    blending: THREE.CustomBlending, blendSrc: THREE.OneFactor, blendDst: THREE.OneMinusSrcAlphaFactor });
+  const m = new THREE.Mesh(geo, mat); m.visible = false; m.renderOrder = 4;
+  return m;
+}
+
+/* ============================ 장면 구성 ============================ */
+let renderer, scene, camera, earth, sky, stars, sunLight, hemiLight, engineLight;
+let TEX, rocket, pad, plume1, plume2, vapor, smoke, fx, fxSmoke, orbitLine, trailLine;
+let flight, warp = 1, simAcc = 0, realTime = 0, lastNow = -1;
+const DT = 0.02;                 // 물리 고정 시간 간격 [s]
+const camPos = [0, 0, 0];        // 카메라 월드 좌표 (double) — 렌더링 원점
+const EXPOSURE = 1.25;
+
+function vec3(a) { return new THREE.Vector3(a[0], a[1], a[2]); }
+function setRel(obj, w) { obj.position.set(w[0] - camPos[0], w[1] - camPos[1], w[2] - camPos[2]); }
+let _m4 = null;
+/* 로켓 자세: +Y = 축 방향 u, +Z = 궤도면 법선의 반대(발사장에서 남쪽) */
+function attitudeQuat(u, out) {
+  if (!_m4) _m4 = new THREE.Matrix4();
+  let z = vscale(ORBIT_N, -1);
+  const d = vdot(z, u); z = vnorm(vsub(z, vscale(u, d)));
+  const x = vcross(u, z);
+  _m4.makeBasis(vec3(x), vec3(u), vec3(z));
+  return out.setFromRotationMatrix(_m4);
+}
+
+function initScene() {
+  _q1 = new THREE.Quaternion(); _q2 = new THREE.Quaternion(); _v3 = new THREE.Vector3(); _proj = new THREE.Vector3();
+  NIGHT_SKY = new THREE.Color(0.16, 0.18, 0.24); NIGHT_GND = new THREE.Color(0.11, 0.12, 0.16);
+  const canvas = document.getElementById('view');
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: true, logarithmicDepthBuffer: true, powerPreference: 'high-performance' });
+  if (!renderer.capabilities.isWebGL2) throw new Error('WebGL2 미지원');
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+  renderer.setSize(window.innerWidth, window.innerHeight, false);
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.0;
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+  scene = new THREE.Scene();
+  camera = new THREE.PerspectiveCamera(50, window.innerWidth/window.innerHeight, 0.3, 1e9);
+  scene.add(camera);
+
+  TEX = makeTextures();
+  const earthTex = generateEarthTextures(renderer);
+
+  stars = makeStars(); scene.add(stars);
+
+  sky = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.ShaderMaterial({
+    uniforms: { uCamRot: { value: new THREE.Matrix3() }, uCamPos: { value: new THREE.Vector3() }, uSunDir: { value: vec3(SUN_DIR) },
+      uCamAlt: { value: 0 }, uExposure: { value: EXPOSURE }, uWarp: { value: 2 }, uTanHalf: { value: 0.5 }, uAspect: { value: 1 } },
+    vertexShader: SKY_VERT, fragmentShader: SKY_FRAG, depthTest: false, depthWrite: false, toneMapped: false,
+    blending: THREE.CustomBlending, blendSrc: THREE.OneFactor, blendDst: THREE.OneMinusSrcAlphaFactor }));
+  sky.frustumCulled = false; sky.renderOrder = -9; scene.add(sky);
+
+  earth = new THREE.Mesh(buildPadSphere(200), new THREE.ShaderMaterial({
+    uniforms: { uAlbedo: { value: earthTex.albedo }, uExtra: { value: earthTex.extra }, uPadPos: { value: vec3(PAD.pos) },
+      uPadEast: { value: vec3(PAD.east) }, uPadNorth: { value: vec3(PAD.north) }, uSunDir: { value: vec3(SUN_DIR) },
+      uCamPos: { value: new THREE.Vector3() }, uCamAlt: { value: 0 }, uTime: { value: 0 }, uExposure: { value: EXPOSURE },
+      uCloudVis: { value: 0 }, uWarp: { value: 1 } },
+    vertexShader: EARTH_VERT, fragmentShader: EARTH_FRAG, toneMapped: false }));
+  earth.renderOrder = 0; scene.add(earth);
+
+  pad = buildPad(TEX);
+  pad.group.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(vec3(PAD.east), vec3(PAD.up), vec3(vscale(PAD.north, -1))));
+  scene.add(pad.group);
+
+  rocket = buildRocket(TEX);
+  scene.add(rocket.s1, rocket.s2);
+  plume1 = makePlume({ core: [1.0, 0.92, 0.75], mid: [1.0, 0.52, 0.16], tail: [0.55, 0.16, 0.04] }, 1.3);
+  plume2 = makePlume({ core: [0.80, 0.86, 1.0], mid: [0.42, 0.48, 0.95], tail: [0.18, 0.16, 0.42] }, 4.1);
+  rocket.s1m.add(plume1.group); rocket.s2.add(plume2.group);
+  vapor = makeVaporCone(); vapor.position.y = 11.5; rocket.s2.add(vapor);
+
+  smoke = new Particles(3200, TEX.smoke, false, false);
+  fx = new Particles(400, TEX.glow, true, true);
+  fxSmoke = new Particles(300, TEX.smoke, false, true);
+  scene.add(smoke.mesh, fx.mesh, fxSmoke.mesh);
+
+  sunLight = new THREE.DirectionalLight(0xffffff, 3.0);
+  sunLight.castShadow = true;
+  sunLight.shadow.mapSize.set(2048, 2048);
+  const sc = sunLight.shadow.camera; sc.left = -75; sc.right = 75; sc.top = 75; sc.bottom = -75; sc.near = 1; sc.far = 600;
+  sunLight.shadow.bias = -0.0004; sunLight.shadow.normalBias = 0.04;
+  scene.add(sunLight, sunLight.target);
+  hemiLight = new THREE.HemisphereLight(0x9cc4ff, 0x50483a, 0.9);
+  scene.add(hemiLight);
+  engineLight = new THREE.PointLight(0xffa04a, 0, 0, 2);
+  scene.add(engineLight);
+
+  const lineMat = (color, opacity) => new THREE.LineBasicMaterial({ color, transparent: true, opacity, depthWrite: false });
+  orbitLine = new THREE.Line(new THREE.BufferGeometry(), lineMat(0x5ad1ff, 0.75));
+  orbitLine.geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(361*3), 3).setUsage(THREE.DynamicDrawUsage));
+  orbitLine.frustumCulled = false; orbitLine.visible = false; orbitLine.renderOrder = 1;
+  trailLine = new THREE.Line(new THREE.BufferGeometry(), lineMat(0xffb547, 0.85));
+  trailLine.geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(TRAIL_MAX*3), 3).setUsage(THREE.DynamicDrawUsage));
+  trailLine.frustumCulled = false; trailLine.renderOrder = 1;
+  scene.add(orbitLine, trailLine);
+}
+
+/* ============================ 궤적 기록 / 궤도선 ============================ */
+const TRAIL_MAX = 4000;
+const trail = { pts: new Float64Array(TRAIL_MAX*3), n: 0, lastT: -1e9 };
+function trailAdd(p, t, spacing) {
+  if (t - trail.lastT < spacing) return;
+  trail.lastT = t;
+  if (trail.n >= TRAIL_MAX) { trail.pts.copyWithin(0, 3); trail.n--; }
+  trail.pts[trail.n*3] = p[0]; trail.pts[trail.n*3+1] = p[1]; trail.pts[trail.n*3+2] = p[2]; trail.n++;
+}
+function updateTrailLine(cur) {
+  const arr = trailLine.geometry.attributes.position.array;
+  let n = trail.n;
+  for (let i = 0; i < n; i++) { arr[i*3] = trail.pts[i*3] - camPos[0]; arr[i*3+1] = trail.pts[i*3+1] - camPos[1]; arr[i*3+2] = trail.pts[i*3+2] - camPos[2]; }
+  if (cur && n > 0 && n < TRAIL_MAX) { arr[n*3] = cur[0] - camPos[0]; arr[n*3+1] = cur[1] - camPos[1]; arr[n*3+2] = cur[2] - camPos[2]; n++; }
+  trailLine.geometry.setDrawRange(0, n);
+  trailLine.geometry.attributes.position.needsUpdate = true;
+  trailLine.visible = n > 1;
+}
+function updateOrbitLine(s, show) {
+  orbitLine.visible = false;
+  if (!show) return;
+  const el = orbitElements(s);
+  if (!(el.eps < 0) || el.hm < 1) return;
+  const rv = [s[0], s[1], s[2]], vv = [s[3], s[4], s[5]];
+  const hhat = vscale(el.hv, 1/el.hm);
+  const evec = vsub(vscale(vcross(vv, el.hv), 1/MU), vscale(rv, 1/el.r));
+  const e = vlen(evec);
+  const P = e > 1e-6 ? vscale(evec, 1/e) : vscale(rv, 1/el.r);
+  const Qv = vcross(hhat, P);
+  const p = el.hm*el.hm/MU;
+  const arr = orbitLine.geometry.attributes.position.array;
+  for (let i = 0; i <= 360; i++) {
+    const th = i/360*2*Math.PI, r = p/(1 + e*Math.cos(th)), c = Math.cos(th)*r, sn = Math.sin(th)*r;
+    arr[i*3] = P[0]*c + Qv[0]*sn - camPos[0]; arr[i*3+1] = P[1]*c + Qv[1]*sn - camPos[1]; arr[i*3+2] = P[2]*c + Qv[2]*sn - camPos[2];
+  }
+  orbitLine.geometry.attributes.position.needsUpdate = true;
+  orbitLine.visible = true;
+}
+
+/* ============================ 카메라 컨트롤 ============================ */
+const camCtl = {
+  mode: 'follow',
+  follow: { az: 120*DEG, el: 0*DEG, dist: 125 },
+  free: { az: 0, el: 0, dist: 3.4*R_E },
+  trans: null, shake: 0,
+  cur: { pos: [0, 0, 0], target: [0, 0, 0], up: [0, 1, 0] },
+};
+function followCam(target) {
+  const up = vnorm(target);
+  const fwd = vnorm(vcross(ORBIT_N, up));
+  const right = vcross(fwd, up);
+  const { az, el, dist } = camCtl.follow;
+  const dir = vadd(vscale(vadd(vscale(fwd, Math.cos(az)), vscale(right, Math.sin(az))), Math.cos(el)), vscale(up, Math.sin(el)));
+  let pos = vadd(target, vscale(dir, dist));
+  const r = vlen(pos), minR = R_E + 2.5;
+  if (r < minR) pos = vscale(pos, minR/r);
+  return { pos, target, up };
+}
+function freeCam() {
+  const { az, el, dist } = camCtl.free;
+  return { pos: [dist*Math.cos(el)*Math.cos(az), dist*Math.sin(el), -dist*Math.cos(el)*Math.sin(az)], target: [0, 0, 0], up: [0, 1, 0] };
+}
+function setCamMode(mode, target) {
+  if (mode === camCtl.mode) return;
+  if (mode === 'free') {
+    // 로켓이 보이면서 지구의 낮 쪽이 많이 보이는 방향에서 시작
+    const rh = vnorm(target);
+    const d = vnorm(vadd(vadd(rh, vscale(SUN_DIR, 0.8)), vscale(ORBIT_N, 0.6)));
+    camCtl.free.az = Math.atan2(-d[2], d[0]); camCtl.free.el = Math.asin(clamp(d[1], -1, 1));
+    camCtl.free.dist = 3.4*R_E;
+  }
+  camCtl.trans = { t: 0, dur: 1.3, from: { pos: camCtl.cur.pos.slice(), target: camCtl.cur.target.slice(), up: camCtl.cur.up.slice() } };
+  camCtl.mode = mode;
+  document.querySelectorAll('[data-cam]').forEach(b => b.classList.toggle('on', b.dataset.cam === mode));
+}
+function blendCam(a, b, k) {
+  const L = (x, y) => [x[0] + (y[0]-x[0])*k, x[1] + (y[1]-x[1])*k, x[2] + (y[2]-x[2])*k];
+  let pos = L(a.pos, b.pos);
+  const minR = R_E + 50 + (1 - Math.abs(2*k - 1))*Math.min(vlen(a.pos), vlen(b.pos))*0.05;
+  if (vlen(pos) < minR) pos = vscale(pos, minR/vlen(pos));
+  return { pos, target: L(a.target, b.target), up: vnorm(L(a.up, b.up)) };
+}
+function initInput() {
+  const cv = renderer.domElement, ptrs = new Map();
+  let pinch0 = 0;
+  const st = () => camCtl.mode === 'follow' ? camCtl.follow : camCtl.free;
+  cv.addEventListener('pointerdown', e => { ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY }); cv.setPointerCapture(e.pointerId); cv.classList.add('dragging');
+    if (ptrs.size === 2) { const [p, q] = [...ptrs.values()]; pinch0 = Math.hypot(p.x - q.x, p.y - q.y); } });
+  cv.addEventListener('pointermove', e => {
+    const pr = ptrs.get(e.pointerId); if (!pr) return;
+    const dx = e.clientX - pr.x, dy = e.clientY - pr.y; pr.x = e.clientX; pr.y = e.clientY;
+    if (ptrs.size === 1) { const s = st(); s.az -= dx*0.0055; s.el = clamp(s.el + dy*0.0055, -1.45, 1.45); }
+    else if (ptrs.size === 2) { const [p, q] = [...ptrs.values()]; const d = Math.hypot(p.x - q.x, p.y - q.y); if (pinch0 > 0 && d > 0) zoomBy(pinch0/d); pinch0 = d; }
+  });
+  const up = e => { ptrs.delete(e.pointerId); if (!ptrs.size) cv.classList.remove('dragging'); pinch0 = 0; };
+  cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
+  cv.addEventListener('wheel', e => { e.preventDefault(); zoomBy(Math.exp(clamp(e.deltaY, -200, 200)*0.0015)); }, { passive: false });
+}
+function zoomBy(f) {
+  camCtl.zoomAnim = null; camCtl.autoZoom = false;
+  if (camCtl.mode === 'follow') camCtl.follow.dist = clamp(camCtl.follow.dist*f, 22, 4e7);
+  else { const s = camCtl.free; s.dist = clamp(R_E + (s.dist - R_E)*f, R_E + 80e3, 60*R_E); }
+}
+
+/* ============================ 효과음 (Web Audio, 전부 합성) ============================ */
+const sfx = {
+  ctx: null, master: null, muted: false, rumble: null, crackle: null, sub: null,
+  ensure() {
+    if (this.ctx) { if (this.ctx.state === 'suspended') this.ctx.resume(); return; }
+    const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+    const ctx = this.ctx = new AC();
+    this.master = ctx.createGain(); this.master.gain.value = this.muted ? 0 : 0.85; this.master.connect(ctx.destination);
+    const len = ctx.sampleRate*2, brown = ctx.createBuffer(1, len, ctx.sampleRate), crk = ctx.createBuffer(1, len, ctx.sampleRate);
+    const b = brown.getChannelData(0), c = crk.getChannelData(0);
+    let last = 0;
+    for (let i = 0; i < len; i++) { last = (last + 0.02*(Math.random()*2 - 1))/1.02; b[i] = last*3.5; c[i] = 0; }
+    for (let i = 0; i < 900; i++) { const at = Math.floor(Math.random()*(len - 400)), amp = 0.3 + Math.random()*0.7; for (let k = 0; k < 300; k++) c[at + k] += (Math.random()*2 - 1)*amp*Math.exp(-k/40); }
+    const loop = (buf) => { const s = ctx.createBufferSource(); s.buffer = buf; s.loop = true; s.start(); return s; };
+    const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 260;
+    this.rumble = ctx.createGain(); this.rumble.gain.value = 0;
+    loop(brown).connect(lp); lp.connect(this.rumble); this.rumble.connect(this.master);
+    const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 900; bp.Q.value = 0.6;
+    this.crackle = ctx.createGain(); this.crackle.gain.value = 0;
+    loop(crk).connect(bp); bp.connect(this.crackle); this.crackle.connect(this.master);
+    const osc = ctx.createOscillator(); osc.type = 'sine'; osc.frequency.value = 42; osc.start();
+    this.sub = ctx.createGain(); this.sub.gain.value = 0; osc.connect(this.sub); this.sub.connect(this.master);
+  },
+  setMuted(m) { this.muted = m; if (this.master) this.master.gain.setTargetAtTime(m ? 0 : 0.85, this.ctx.currentTime, 0.05); },
+  engine(level, air) {
+    if (!this.ctx) return;
+    const t = this.ctx.currentTime, a = 0.25 + 0.75*air;
+    this.rumble.gain.setTargetAtTime(level*0.9*a, t, 0.08);
+    this.crackle.gain.setTargetAtTime(level*0.55*air, t, 0.08);
+    this.sub.gain.setTargetAtTime(level*0.35*a, t, 0.1);
+  },
+  tone(freq, dur, type = 'sine', vol = 0.25, when = 0) {
+    if (!this.ctx) return;
+    const t = this.ctx.currentTime + when, o = this.ctx.createOscillator(), g = this.ctx.createGain();
+    o.type = type; o.frequency.value = freq; g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0005, t + dur);
+    o.connect(g); g.connect(this.master); o.start(t); o.stop(t + dur + 0.05);
+  },
+  bang() {
+    if (!this.ctx) return;
+    const ctx = this.ctx, t = ctx.currentTime, n = ctx.createBufferSource(), buf = ctx.createBuffer(1, ctx.sampleRate*0.6, ctx.sampleRate), d = buf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = (Math.random()*2 - 1)*Math.exp(-i/(ctx.sampleRate*0.08));
+    n.buffer = buf; const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 1400; const g = ctx.createGain(); g.gain.value = 0.9;
+    n.connect(f); f.connect(g); g.connect(this.master); n.start(t);
+    const o = ctx.createOscillator(), og = ctx.createGain(); o.frequency.setValueAtTime(90, t); o.frequency.exponentialRampToValueAtTime(30, t + 0.4);
+    og.gain.setValueAtTime(0.7, t); og.gain.exponentialRampToValueAtTime(0.001, t + 0.5); o.connect(og); og.connect(this.master); o.start(t); o.stop(t + 0.55);
+  },
+  chime() { [1046.5, 1318.5, 1568, 2093].forEach((f, i) => this.tone(f, 1.4, 'sine', 0.16, i*0.13)); },
+};
+
+/* ============================ HUD ============================ */
+const $ = id => document.getElementById(id);
+const hudCache = {};
+function setText(id, txt) { if (hudCache[id] !== txt) { hudCache[id] = txt; $(id).textContent = txt; } }
+const fmt = (x, d = 0) => x.toLocaleString('ko-KR', { minimumFractionDigits: d, maximumFractionDigits: d });
+function fmtT(t) {
+  const s = Math.abs(t), m = Math.floor(s/60), r = Math.floor(s % 60);
+  return `T${t < 0 ? '−' : '+'}${String(m).padStart(2, '0')}:${String(r).padStart(2, '0')}`;
+}
+function updateHUD(tel) {
+  setText('hudTime', fmtT(tel.t));
+  const ph = flight.phase;
+  let label = PHASE_LABEL[ph];
+  if (ph === 'orbit' && flight.tSeco !== null && tel.t > flight.tSeco + 20) label = '궤도 비행 중';
+  setText('hudPhase', label);
+  const cls = ph === 'orbit' ? 'phaseTag ok' : ph === 'failed' ? 'phaseTag bad' : (ph === 'countdown' || ph === 'meco' || ph === 'sep') ? 'phaseTag warn' : 'phaseTag';
+  if (hudCache.phaseCls !== cls) { hudCache.phaseCls = cls; $('hudPhase').className = cls; }
+  setText('hudAlt', fmt(Math.max(0, tel.h - VEH.baseHeight)/1000, tel.h < 100e3 ? 2 : 1));
+  setText('hudVel', fmt(tel.v*3.6));
+  setText('hudMach', fmt(tel.M, 2));
+  setText('hudFuel', fmt(tel.fuel*100, 1));
+  const f1 = tel.fuel1*100, f2 = tel.fuel2*100;
+  $('fuel1').style.width = f1.toFixed(1) + '%'; $('fuel2').style.width = f2.toFixed(1) + '%';
+  $('fuel1').classList.toggle('low', f1 < 15); $('fuel2').classList.toggle('low', f2 < 15);
+  setText('fuel1t', f1.toFixed(0) + '%'); setText('fuel2t', f2.toFixed(0) + '%');
+  $('fb1').classList.toggle('inactive', flight.stage !== 1); $('fb2').classList.toggle('inactive', flight.stage !== 2);
+  setText('dAcc', fmt(tel.acc, 2) + ' G');
+  setText('dQ', fmt(tel.q/1000, 1) + ' kPa');
+  setText('dThr', fmt(tel.thrust/1000) + ' kN');
+  setText('dMass', fmt(tel.mass/1000, 1) + ' t');
+  setText('dVrh', `${fmt(tel.vr)} / ${fmt(tel.vt)} m/s`);
+  setText('dDown', fmt(tel.down/1000, 1) + ' km');
+  const el = tel.el, show = flight.running && flight.phase !== 'countdown' && tel.v > 50;
+  setText('dApo', show && isFinite(el.ra) ? fmt((el.ra - R_E)/1000, 1) + ' km' : '—');
+  setText('dPeri', show ? fmt((el.rp - R_E)/1000, 1) + ' km' : '—');
+  setText('dPer', show && isFinite(el.period) && el.rp > R_E ? fmt(el.period/60, 1) + ' 분' : '—');
+  setText('dInc', show && isFinite(el.inc) ? fmt(el.inc, 1) + '°' : '—');
+}
+
+/* ---------- 이벤트 로그 + 배너 ---------- */
+const eventLog = [];
+let bannerTimer = 0;
+function banner(main, sub = '', cls = '', dur = 3.2) {
+  const b = $('banner');
+  b.className = 'show ' + cls;
+  $('bannerMain').textContent = main; $('bannerSub').textContent = sub;
+  bannerTimer = dur;
+}
+function logEvent(t, text) {
+  eventLog.push({ t, text });
+  const ol = $('eventList');
+  ol.innerHTML = '';
+  eventLog.slice(-12).reverse().forEach((e, i) => {   // 최신 이벤트가 맨 위
+    const li = document.createElement('li');
+    if (i === 0) li.className = 'new';
+    const b = document.createElement('b'); b.textContent = fmtT(e.t);
+    li.append(b, document.createTextNode(e.text));
+    ol.appendChild(li);
+  });
+}
+function resetLog() {
+  eventLog.length = 0;
+  $('eventList').innerHTML = '<li class="empty">발사 버튼을 누르면 기록됩니다</li>';
+}
+
+/* ============================ 비행 프로파일 차트 (고도 vs 하방거리) ============================ */
+const prof = { pts: [], marks: [], lastT: -1e9, hover: null, dirty: true, frozen: false };
+function profAdd(t, tel, force) {
+  if (prof.frozen || (!force && t - prof.lastT < 1)) return;
+  prof.lastT = t;
+  prof.pts.push({ t, x: tel.down/1000, y: Math.max(0, tel.h - VEH.baseHeight)/1000, v: tel.v*3.6 });
+  prof.dirty = true;
+}
+function niceStep(range, target) {
+  const raw = range/Math.max(1, target), p = Math.pow(10, Math.floor(Math.log10(raw))), m = raw/p;
+  return (m < 1.5 ? 1 : m < 3 ? 2 : m < 7 ? 5 : 10)*p;
+}
+function drawChart() {
+  const cv = $('chart'); if (!cv.offsetWidth) return;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2), W = cv.offsetWidth, H = cv.offsetHeight;
+  if (cv.width !== Math.round(W*dpr)) { cv.width = Math.round(W*dpr); cv.height = Math.round(H*dpr); }
+  const c = cv.getContext('2d'); c.setTransform(dpr, 0, 0, dpr, 0, 0); c.clearRect(0, 0, W, H);
+  const L = 34, Rr = 8, Tp = 8, B = 20, pw = W - L - Rr, ph = H - Tp - B;
+  const pts = prof.pts;
+  const xMax = Math.max(10, ...pts.map(p => p.x))*1.05, yMax = Math.max(10, ...pts.map(p => p.y))*1.1;
+  const sx = x => L + x/xMax*pw, sy = y => Tp + ph - y/yMax*ph;
+  c.font = '10px "Segoe UI", "Malgun Gothic", sans-serif'; c.textBaseline = 'middle';
+  c.strokeStyle = 'rgba(150,185,255,0.10)'; c.lineWidth = 1; c.fillStyle = '#6f8199';
+  const ys = niceStep(yMax, 4);
+  c.textAlign = 'right';
+  for (let y = 0; y <= yMax; y += ys) { const Y = Math.round(sy(y)) + 0.5; c.beginPath(); c.moveTo(L, Y); c.lineTo(L + pw, Y); c.stroke(); c.fillText(fmt(y), L - 5, Y); }
+  const xs = niceStep(xMax, 4);
+  c.textAlign = 'center'; c.textBaseline = 'top';
+  for (let x = 0; x <= xMax; x += xs) { const X = Math.round(sx(x)) + 0.5; c.beginPath(); c.moveTo(X, Tp); c.lineTo(X, Tp + ph); c.stroke(); c.fillText(fmt(x), X, Tp + ph + 5); }
+  if (pts.length < 2) { c.fillStyle = '#6f8199'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('발사 후 궤적이 그려집니다', L + pw/2, Tp + ph/2); return; }
+  c.strokeStyle = '#5ad1ff'; c.lineWidth = 2; c.lineJoin = c.lineCap = 'round';
+  c.beginPath(); pts.forEach((p, i) => i ? c.lineTo(sx(p.x), sy(p.y)) : c.moveTo(sx(p.x), sy(p.y))); c.stroke();
+  c.textBaseline = 'bottom';
+  const placed = [];
+  for (const m of prof.marks) {
+    const X = sx(m.x), Y = sy(m.y);
+    c.fillStyle = 'rgba(7,13,24,1)'; c.beginPath(); c.arc(X, Y, 6, 0, Math.PI*2); c.fill();
+    c.fillStyle = '#5ad1ff'; c.beginPath(); c.arc(X, Y, 4, 0, Math.PI*2); c.fill();
+    const right = X > L + pw*0.7, w = c.measureText(m.label).width, lx = right ? X - 7 - w : X + 7, ly = Y - 4;
+    if (placed.some(p => lx < p.x + p.w + 4 && lx + w + 4 > p.x && Math.abs(ly - p.y) < 12)) continue;   // 겹치면 라벨 생략(로그·툴팁에서 확인)
+    placed.push({ x: lx, y: ly, w });
+    c.fillStyle = '#a3b3ca'; c.textAlign = 'left'; c.fillText(m.label, lx, ly);
+  }
+  const h = prof.hover;
+  if (h) {
+    const X = sx(h.x), Y = sy(h.y);
+    c.strokeStyle = 'rgba(233,238,247,0.35)'; c.lineWidth = 1;
+    c.beginPath(); c.moveTo(Math.round(X) + 0.5, Tp); c.lineTo(Math.round(X) + 0.5, Tp + ph); c.stroke();
+    c.fillStyle = 'rgba(7,13,24,1)'; c.beginPath(); c.arc(X, Y, 6, 0, Math.PI*2); c.fill();
+    c.fillStyle = '#5ad1ff'; c.beginPath(); c.arc(X, Y, 4, 0, Math.PI*2); c.fill();
+    const lines = [fmtT(h.t), `고도 ${fmt(h.y, 1)} km`, `하방 ${fmt(h.x, 1)} km`, `속도 ${fmt(h.v)} km/h`];
+    const bw = 104, bh = 62, bx = X + 10 + bw > W ? X - 10 - bw : X + 10, by = clamp(Y - bh/2, 2, H - bh - 2);
+    c.fillStyle = 'rgba(7,13,24,0.92)'; c.strokeStyle = 'rgba(150,185,255,0.3)';
+    c.beginPath(); c.roundRect ? c.roundRect(bx, by, bw, bh, 6) : c.rect(bx, by, bw, bh); c.fill(); c.stroke();
+    c.textAlign = 'left'; c.textBaseline = 'top';
+    lines.forEach((s, i) => { c.fillStyle = i ? '#e9eef7' : '#a3b3ca'; c.fillText(s, bx + 8, by + 6 + i*13); });
+  }
+}
+function initChartHover() {
+  const cv = $('chart');
+  cv.addEventListener('pointermove', e => {
+    const pts = prof.pts; if (pts.length < 2) return;
+    const r = cv.getBoundingClientRect(), W = r.width, L = 34, pw = W - L - 8;
+    const xMax = Math.max(10, ...pts.map(p => p.x))*1.05, xv = (e.clientX - r.left - L)/pw*xMax;
+    let best = pts[0]; for (const p of pts) if (Math.abs(p.x - xv) < Math.abs(best.x - xv)) best = p;
+    prof.hover = best; prof.dirty = true;
+  });
+  cv.addEventListener('pointerleave', () => { prof.hover = null; prof.dirty = true; });
+}
+
+/* ============================ 비행 이벤트 → 화면/소리 ============================ */
+function profMark(tel, label) {
+  profAdd(tel.t, tel, true);
+  prof.marks.push({ x: tel.down/1000, y: Math.max(0, tel.h - VEH.baseHeight)/1000, label });
+  prof.dirty = true;
+}
+function onFlightEvent(type, t, d) {
+  const tel = flight.telemetry();
+  switch (type) {
+    case 'countdown': logEvent(t, '카운트다운 시작'); break;
+    case 'ignition': logEvent(t, '1단 엔진 5기 점화'); banner('점화', '추력 상승 중 · 홀드다운 클램프 고정', 'warn', 1.4); spawnIgnitionFx(); camCtl.shake = Math.max(camCtl.shake, 0.6); break;
+    case 'liftoff': logEvent(t, '이륙 (LIFTOFF)'); banner('이륙!', `추력/중량비 ${VEH.s1TW.toFixed(1)} · 1단 연소`, '', 3); camCtl.shake = 1.1; break;
+    case 'pitch': logEvent(t, `피치 기동 시작 (${VEH.kickDeg}° 기울임 후 중력 선회)`); break;
+    case 'mach1': logEvent(t, `음속 돌파 · 고도 ${fmt(tel.h/1000, 1)} km`); banner('음속 돌파', `마하 1 · 고도 ${fmt(tel.h/1000, 1)} km`, '', 2.4); break;
+    case 'maxq': logEvent(t, `Max-Q 통과 · ${fmt(d.q/1000, 1)} kPa`); banner('Max-Q', `최대 동압 ${fmt(d.q/1000, 1)} kPa 통과`, 'warn', 2.4); break;
+    case 'meco':
+      logEvent(t, '1단 엔진 정지 (MECO)'); banner('1단 엔진 정지', `MECO · 고도 ${fmt(d.h/1000, 1)} km · ${fmt(d.v*3.6)} km/h`, 'warn', 2.0); profMark(tel, 'MECO');
+      // 분리된 1단이 떨어지는 모습이 화면에 오래 남도록 카메라를 살짝 뒤로 뺀다
+      if (camCtl.mode === 'follow' && camCtl.follow.dist < 320) { camCtl.zoomAnim = { from: camCtl.follow.dist, to: 320, t: 0, dur: 2.5 }; camCtl.autoZoom = true; }
+      break;
+    case 'sep': logEvent(t, '1단 분리'); banner('1단 분리!', '분리 장치 작동 · 1단은 바다로 낙하', 'warn', 2.6); spawnSepFx(); sfx.bang(); camCtl.shake = 1.3; profMark(tel, '분리'); break;
+    case 'ign2': logEvent(t, '2단 점화 · PEG 유도 시작'); banner('2단 점화', '목표: 고도 250 km 원궤도', '', 2.6); spawnIgn2Fx(); break;
+    case 'fairing':
+      logEvent(t, `페어링 분리 · 고도 ${fmt(tel.h/1000, 0)} km`); banner('페어링 분리', '대기가 충분히 희박 · 위성 노출', '', 2.4); spawnFairingFx();
+      if (camCtl.mode === 'follow' && camCtl.autoZoom) { camCtl.zoomAnim = { from: camCtl.follow.dist, to: 110, t: 0, dur: 2.0 }; camCtl.autoZoom = false; }
+      break;
+    case 'seco': logEvent(t, '2단 엔진 정지 (SECO)'); profMark(tel, 'SECO'); break;
+    case 'orbit':
+      logEvent(t, `궤도 진입 성공 · ${fmt(d.periAlt/1000, 0)} × ${fmt(d.apoAlt/1000, 0)} km`);
+      banner('궤도 진입 성공!', `근지점 ${fmt(d.periAlt/1000, 1)} km · 원지점 ${fmt(d.apoAlt/1000, 1)} km · 주기 ${fmt(d.period/60, 1)}분`, 'good', 5);
+      sfx.chime(); break;
+    case 'fail': logEvent(t, '궤도 진입 실패'); banner('궤도 진입 실패', `근지점 ${fmt(d.periAlt/1000, 0)} km`, 'warn', 4); break;
+    case 's1impact': logEvent(t, `1단 해상 낙하 (발사장에서 ${fmt(d.range/1000, 0)} km)`); break;
+    case 'crash': logEvent(t, '추락'); banner('추락', '', 'warn', 4); break;
+  }
+}
+
+/* 부착형 효과: 좌표는 현재 비행체(2단 또는 적층) 노즐 출구 기준 */
+function perpBasis(u) { const a = vnorm(vcross(u, Math.abs(u[1]) < 0.9 ? [0, 1, 0] : [1, 0, 0])); return [a, vcross(u, a)]; }
+function burst(sys, u, along, n, o) {
+  const [a1, a2] = perpBasis(u);
+  for (let i = 0; i < n; i++) {
+    const ang = Math.random()*Math.PI*2, rad = vadd(vscale(a1, Math.cos(ang)), vscale(a2, Math.sin(ang)));
+    const sp = o.speed[0] + Math.random()*(o.speed[1] - o.speed[0]);
+    const p = vadd(vscale(u, along + (Math.random() - 0.5)*o.spread), vscale(rad, o.r0));
+    const v = vadd(vscale(rad, sp), vscale(u, (Math.random() - 0.5)*o.axial));
+    sys.spawn(p[0], p[1], p[2], v[0], v[1], v[2], o.life*(0.7 + Math.random()*0.6), o.s0, o.s1*(0.7 + Math.random()*0.6), o.a, o.c[0], o.c[1], o.c[2], o.heat || 0, o.drag || 0.8, 0, o.fadeIn || 0.05);
+  }
+}
+function spawnIgnitionFx() {
+  const u = flight.body.u;
+  burst(fx, u, -2.5, 14, { speed: [2, 8], r0: 1.2, spread: 3, axial: 6, life: 0.7, s0: 6, s1: 22, a: 0.8, c: [1.0, 0.62, 0.25] });
+}
+function spawnSepFx() {
+  const u = flight.body.u;
+  burst(fx, u, 3.5, 8, { speed: [1, 4], r0: 1.4, spread: 1, axial: 2, life: 0.4, s0: 5, s1: 24, a: 1.0, c: [1.0, 0.85, 0.6] });
+  burst(fxSmoke, u, 3.5, 80, { speed: [6, 16], r0: 1.6, spread: 1.2, axial: 4, life: 2.6, s0: 1.4, s1: 9, a: 0.6, c: [0.95, 0.96, 1.0], drag: 0.7 });
+  burst(fx, u, 3.5, 40, { speed: [10, 34], r0: 1.5, spread: 1, axial: 10, life: 0.9, s0: 0.7, s1: 0.25, a: 1.0, c: [1.0, 0.7, 0.3], drag: 0.3 });
+}
+function spawnIgn2Fx() {
+  const u = flight.body.u;
+  burst(fx, u, -1.5, 8, { speed: [1, 5], r0: 0.6, spread: 2, axial: 4, life: 0.5, s0: 4, s1: 18, a: 0.9, c: [0.75, 0.82, 1.0] });
+}
+function spawnFairingFx() {
+  const u = flight.body.u;
+  burst(fxSmoke, u, 13.2, 36, { speed: [3, 8], r0: 1.7, spread: 0.6, axial: 2, life: 1.8, s0: 0.8, s1: 5, a: 0.5, c: [0.95, 0.96, 1.0], drag: 0.6 });
+}
+
+/* ============================ 프레임 갱신 ============================ */
+const vis = { lastSimT: -3, emitPrev: null, groundEmit: 0, lastCount: null, frameTimes: [], prTimer: 0, chartTimer: 0 };
+let _q1, _q2, _v3, _proj, NIGHT_SKY, NIGHT_GND;   // THREE 로드 후 initScene에서 생성
+function lerpBody(b, a) { return [b.prev[0] + (b.s[0] - b.prev[0])*a, b.prev[1] + (b.s[1] - b.prev[1])*a, b.prev[2] + (b.s[2] - b.prev[2])*a]; }
+function tumbleQuat(d, t, out) {
+  attitudeQuat(d.u0, out);
+  const tau = Math.max(0, t - d.t0);
+  _q1.setFromAxisAngle(_v3.set(d.axis[0], d.axis[1], d.axis[2]), d.rate*tau);
+  _q2.setFromAxisAngle(_v3.set(0, 1, 0), d.roll*tau);
+  return out.premultiply(_q1).multiply(_q2);
+}
+function chapmanJS(X, h, mu) {
+  const c = Math.sqrt(X + h);
+  if (mu >= 0) return c/(c*mu + 1)*Math.exp(-h);
+  const x0 = Math.sqrt(1 - mu*mu)*(X + h), c0 = Math.sqrt(x0);
+  return 2*c0*Math.exp(Math.min(X - x0, 40)) - c/(1 - c*mu)*Math.exp(-h);
+}
+function sunTransJS(h, mu) {
+  const tR = 8000*chapmanJS(R_E/8000, h/8000, mu), tM = 1200*chapmanJS(R_E/1200, h/1200, mu);
+  return [5.8e-6, 13.5e-6, 33.1e-6].map(b => Math.exp(-(b*tR + 2.1e-5*1.1*tM)));
+}
+function occludedByEarth(P) {
+  const d = vsub(P, camPos), L = vlen(d), dir = vscale(d, 1/L);
+  const b = vdot(camPos, dir), c = vdot(camPos, camPos) - (R_E - 2000)**2, disc = b*b - c;
+  if (disc < 0) return false;
+  const t = -b - Math.sqrt(disc);
+  return t > 0 && t < L;
+}
+const labels = {};
+function placeLabel(key, text, cls, P, show) {
+  let el = labels[key];
+  if (!el) { el = labels[key] = document.createElement('div'); el.className = 'tag ' + cls; el.innerHTML = `<span class="dot"></span>${text}`; $('labels').appendChild(el); }
+  if (show) {
+    _proj.set(P[0] - camPos[0], P[1] - camPos[1], P[2] - camPos[2]).project(camera);
+    show = _proj.z < 1 && Math.abs(_proj.x) < 1.05 && Math.abs(_proj.y) < 1.05 && !occludedByEarth(P);
+  }
+  el.style.display = show ? 'block' : 'none';
+  if (show) el.style.transform = `translate(${((_proj.x + 1)/2*window.innerWidth).toFixed(1)}px, ${((1 - _proj.y)/2*window.innerHeight).toFixed(1)}px) translate(-50%, -130%)`;
+}
+
+function updateFrame(dt) {
+  const fl = flight, b = fl.body;
+  const alpha = fl.running ? clamp(simAcc/DT, 0, 1) : 1;
+  const B = lerpBody(b, alpha);
+  const u = vnorm(vadd(b.uPrev, vscale(vsub(b.u, b.uPrev), alpha)));
+  const simT = fl.t + (fl.running ? simAcc : 0);
+  const simDt = Math.max(0, simT - vis.lastSimT); vis.lastSimT = simT;
+  const hB = vlen(B) - R_E;
+  const atmB = atmosphere(hB, {});
+
+  /* --- 카메라 --- */
+  const za = camCtl.zoomAnim;
+  if (za) {
+    za.t += dt;
+    camCtl.follow.dist = za.from + (za.to - za.from)*smooth01(za.t/za.dur);
+    if (za.t >= za.dur) camCtl.zoomAnim = null;
+  }
+  const target = vadd(B, vscale(u, fl.stage === 1 ? 19 : 9));   // 조준점은 동체 중앙보다 약간 아래(화염·연기가 화면에 들어오도록)
+  let cam = camCtl.mode === 'follow' ? followCam(target) : freeCam();
+  if (camCtl.trans) {
+    camCtl.trans.t += dt;
+    cam = blendCam(camCtl.trans.from, cam, smooth01(camCtl.trans.t/camCtl.trans.dur));
+    if (camCtl.trans.t >= camCtl.trans.dur) camCtl.trans = null;
+  }
+  camCtl.cur = cam;
+  camPos[0] = cam.pos[0]; camPos[1] = cam.pos[1]; camPos[2] = cam.pos[2];
+  camera.position.set(0, 0, 0);
+  camera.up.set(cam.up[0], cam.up[1], cam.up[2]);
+  camera.lookAt(cam.target[0] - camPos[0], cam.target[1] - camPos[1], cam.target[2] - camPos[2]);
+  const camDist = vlen(vsub(target, camPos));
+  const engineOn = b.throttle > 0.02 && fl.phase !== 'ready';
+  const q = 0.5*atmB.rho*vdot(b.s.subarray(3, 6), b.s.subarray(3, 6));
+  const rumble = engineOn ? b.throttle*(0.25*clamp(q/80e3, 0, 1) + 0.5*clamp(1 - hB/800, 0, 1)) : 0;
+  const shake = Math.max(camCtl.shake, rumble)*(camCtl.mode === 'follow' ? clamp(160/camDist, 0, 1) : 0);
+  if (shake > 0.002) {
+    const a = shake*0.0045;
+    camera.rotateX((Math.sin(realTime*41.3) + 0.6*Math.sin(realTime*23.7))*a);
+    camera.rotateY((Math.sin(realTime*37.1 + 1.3) + 0.6*Math.sin(realTime*19.3))*a);
+  }
+  camCtl.shake *= Math.exp(-dt*1.4);
+  camera.updateMatrixWorld();
+  const camAlt = vlen(camPos) - R_E;
+
+  /* --- 지구, 하늘, 별 --- */
+  setRel(earth, PAD.pos); setRel(pad.group, PAD.pos);
+  const eu = earth.material.uniforms;
+  eu.uCamPos.value.set(camPos[0], camPos[1], camPos[2]); eu.uCamAlt.value = camAlt; eu.uTime.value = realTime;
+  eu.uCloudVis.value = smooth01((camAlt - 2000)/12000); eu.uWarp.value = -1.8;
+  const su = sky.material.uniforms;
+  su.uCamRot.value.setFromMatrix4(camera.matrixWorld);
+  su.uCamPos.value.set(camPos[0], camPos[1], camPos[2]); su.uCamAlt.value = camAlt;
+  su.uTanHalf.value = Math.tan(camera.fov*DEG/2); su.uAspect.value = camera.aspect;
+  su.uWarp.value = 1 + 1.2*(1 - smooth01((camAlt - 2000)/28000));
+  stars.material.uniforms.uScale.value = renderer.getPixelRatio();
+
+  /* --- 로켓 / 잔해 배치 --- */
+  if (fl.stage === 1) {
+    setRel(rocket.s1, vadd(B, vscale(u, S1_COM))); attitudeQuat(u, rocket.s1.quaternion);
+    setRel(rocket.s2, vadd(B, vscale(u, VEH.stage2Offset))); rocket.s2.quaternion.copy(rocket.s1.quaternion);
+    rocket.s1.visible = true;
+  } else {
+    const d = fl.debris.find(x => x.kind === 's1');
+    rocket.s1.visible = !!(d && d.alive);
+    if (rocket.s1.visible) { setRel(rocket.s1, lerpBody(d.body, alpha)); tumbleQuat(d, simT, rocket.s1.quaternion); }
+    setRel(rocket.s2, B); attitudeQuat(u, rocket.s2.quaternion);
+  }
+  const fdeb = fl.debris.filter(x => x.kind === 'fairing');
+  rocket.fairings.forEach((f, k) => {
+    const d = fdeb.find(x => x.side === (k === 0 ? 1 : -1));
+    if (!d) return;
+    if (f.pivot.parent !== scene) scene.add(f.pivot);
+    f.pivot.visible = d.alive;
+    setRel(f.pivot, lerpBody(d.body, alpha)); tumbleQuat(d, simT, f.pivot.quaternion);
+  });
+  // 스윙 암 후퇴 (T-2초부터 3초간)
+  const armK = fl.running ? smooth01((simT + 2.0)/3.0) : 0;
+  pad.arms.forEach((a, i) => { a.pivot.rotation.y = a.base + armK*(70 + i*6)*DEG; });
+
+  /* --- 엔진 화염, 노즐 발광, 엔진 조명, 증기 원뿔 --- */
+  const thr1 = fl.stage === 1 && fl.phase !== 'ready' ? b.throttle : 0, thr2 = fl.stage === 2 ? b.throttle : 0;
+  setPlume(plume1, thr1, atmB.p, realTime, { len: 38, r0: 1.5, expand: 5.5, bright: 1.3, diamonds: 1.0 });
+  setPlume(plume2, thr2, atmB.p, realTime, { len: 16, r0: 1.0, expand: 6.0, bright: 0.9, diamonds: 0.3 });
+  rocket.nozzle1.emissive.setRGB(1.0, 0.42, 0.12).multiplyScalar(thr1*0.9);
+  rocket.nozzle2.emissive.setRGB(0.55, 0.5, 1.0).multiplyScalar(thr2*0.5);
+  setRel(engineLight, vadd(B, vscale(u, -3)));
+  engineLight.color.setRGB(thr2 > 0 ? 0.7 : 1.0, thr2 > 0 ? 0.75 : 0.62, thr2 > 0 ? 1.0 : 0.3);
+  engineLight.intensity = (thr1*600 + thr2*120)*(0.3 + 0.7*clamp(1 - hB/3000, 0, 1));
+  const M = Math.hypot(b.s[3], b.s[4], b.s[5])/atmB.a;
+  const vapI = smooth01((M - 0.86)/0.08)*(1 - smooth01((M - 1.06)/0.12))*(1 - smooth01((hB - 9000)/5000))*(engineOn ? 1 : 0);
+  vapor.visible = vapI > 0.01; vapor.material.uniforms.uI.value = vapI; vapor.material.uniforms.uTime.value = realTime;
+
+  /* --- 태양광 / 반구광 (일식·대기 투과 반영) --- */
+  const sd = vdot(B, SUN_DIR);
+  let sunVis = 1;
+  if (sd < 0) sunVis = smooth01((vlen(vsub(B, vscale(SUN_DIR, sd))) - (R_E - 30e3))/60e3);
+  const tr = sunTransJS(Math.max(0, hB), vdot(vnorm(B), SUN_DIR)), trMax = Math.max(...tr, 1e-6);
+  sunLight.color.setRGB(tr[0]/trMax, tr[1]/trMax, tr[2]/trMax);
+  sunLight.intensity = 3.2*trMax*sunVis;
+  const nearPad = vlen(vsub(B, PAD.pos)) < 3000;
+  const lt = nearPad ? vadd(PAD.pos, vscale(PAD.up, 25)) : target;
+  setRel(sunLight.target, lt); setRel(sunLight, vadd(lt, vscale(SUN_DIR, 300)));
+  renderer.shadowMap.autoUpdate = vlen(vsub(camPos, PAD.pos)) < 8000 && nearPad;
+  const airK = clamp(Math.sqrt(atmB.rho/1.225), 0, 1), upB = vnorm(B);
+  hemiLight.position.set(upB[0], upB[1], upB[2]);
+  const dayK = smooth01((vdot(upB, SUN_DIR) + 0.1)/0.4);
+  // 밤(지구 그림자)에도 로켓 실루엣이 보이도록 약한 최소 환경광(지구광·별빛 느낌)을 남긴다
+  hemiLight.color.setRGB(0.45 + 0.1*airK, 0.6 + 0.1*airK, 1.0).multiplyScalar((0.08 + 0.92*airK)*dayK).add(NIGHT_SKY);
+  hemiLight.groundColor.setRGB(0.32 - 0.12*(1 - airK), 0.30 - 0.05*(1 - airK), 0.24 + 0.16*(1 - airK)).multiplyScalar(dayK).add(NIGHT_GND);
+  hemiLight.intensity = 0.9;
+
+  /* --- 연기 파티클 --- */
+  if (fl.stage === 1 && engineOn && atmB.rho > 0.003) {
+    const dens = clamp(atmB.rho/1.225, 0, 1), vac = 1 - clamp(atmB.p/P0, 0, 1);
+    const P = vadd(B, vscale(u, -38*(1 + 1.6*vac)*0.38));
+    if (!fl.clamped) {
+      if (!vis.emitPrev) vis.emitPrev = P;
+      const seg = vsub(P, vis.emitPrev), L = vlen(seg), speed = vlen(b.s.subarray(3, 6));
+      const n = Math.min(40, Math.floor(L/Math.max(3.5, speed*0.035)));
+      for (let i = 1; i <= n; i++) {
+        const Q = vadd(vis.emitPrev, vscale(seg, i/n));
+        const s1 = (18 + 22*Math.random())*(1 + 1.4*(1 - dens)), life = 16 + 22*Math.sqrt(dens);
+        smoke.spawn(Q[0] + (Math.random() - 0.5)*3, Q[1] + (Math.random() - 0.5)*3, Q[2] + (Math.random() - 0.5)*3,
+          (Math.random() - 0.5)*3 - u[0]*6, (Math.random() - 0.5)*3 - u[1]*6, (Math.random() - 0.5)*3 - u[2]*6,
+          life, 6 + 4*Math.random(), s1, 0.55*(0.35 + 0.65*Math.sqrt(dens)),
+          0.92, 0.92, 0.9, 0.55, 0.35, 0.2, 0.25/life);
+      }
+      if (n > 0) vis.emitPrev = P;
+    }
+    if (hB < 450) {   // 발사대 화염 유도로 양쪽으로 뿜어지는 지상 연기
+      vis.groundEmit += simDt*55*b.throttle*clamp(1 - hB/450, 0, 1);
+      let cnt = 0;
+      while (vis.groundEmit >= 1 && cnt++ < 60) {
+        vis.groundEmit -= 1;
+        const side = Math.random() < 0.5 ? -1 : 1, mount = Math.random() < 0.25;
+        const off = mount ? vadd(vscale(PAD.east, (Math.random() - 0.5)*10), vadd(vscale(PAD.north, (Math.random() - 0.5)*10), vscale(PAD.up, 3 + Math.random()*3)))
+                          : vadd(vscale(PAD.east, side*(22 + Math.random()*6)), vadd(vscale(PAD.north, (Math.random() - 0.5)*8), vscale(PAD.up, 2 + Math.random()*3)));
+        const dir = mount ? vnorm(vadd(off, vscale(PAD.up, -4))) : vscale(PAD.east, side);
+        const sp = mount ? 8 + Math.random()*14 : 16 + Math.random()*24;
+        const vel = vadd(vscale(dir, sp), vadd(vscale(PAD.up, 1 + Math.random()*5), vscale(PAD.north, (Math.random() - 0.5)*12)));
+        const p0 = vadd(PAD.pos, off);
+        smoke.spawn(p0[0], p0[1], p0[2], vel[0], vel[1], vel[2], 24 + Math.random()*16, 6 + Math.random()*4, 36 + Math.random()*26,
+          0.6, 0.97, 0.97, 0.95, 0.9, 0.16, 0.45, 0.02);
+      }
+    }
+  } else vis.emitPrev = null;
+  const sunCol = sunLight.color, sk = 0.78*sunLight.intensity/3.2;
+  smoke.mat.uniforms.uSun.value.setRGB(sunCol.r*sk, sunCol.g*sk, sunCol.b*sk);
+  smoke.mat.uniforms.uAmb.value.setRGB(0.20, 0.24, 0.30).multiplyScalar(0.25 + 0.75*dayK);
+  fxSmoke.mat.uniforms.uSun.value.copy(smoke.mat.uniforms.uSun.value);
+  fxSmoke.mat.uniforms.uAmb.value.copy(smoke.mat.uniforms.uAmb.value);
+  smoke.update(simDt, simDt, camPos, null);
+  fx.update(dt, dt, camPos, B);
+  fxSmoke.update(dt, dt, camPos, B);
+
+  /* --- 궤도선 / 비행 궤적 / 라벨 --- */
+  const flying = fl.running && fl.phase !== 'countdown';
+  if (flying) trailAdd(B, simT, fl.phase === 'orbit' || fl.phase === 'failed' ? 5 : 1);
+  const farView = camCtl.mode === 'free' || camDist > 20e3;
+  updateOrbitLine(b.s, flying && (farView || fl.phase === 'orbit'));
+  if (farView) updateTrailLine(B); else trailLine.visible = false;
+  placeLabel('rocket', 'VIBE-2', '', target, camDist > 1500 || sunVis < 0.25);
+  const d1 = fl.debris.find(x => x.kind === 's1' && x.alive);
+  placeLabel('s1', '분리된 1단', 's1', d1 ? lerpBody(d1.body, alpha) : PAD.pos, !!d1 && vlen(vsub(lerpBody(d1.body, alpha), camPos)) > 1500);
+  placeLabel('pad', '발사장', 's1', PAD.pos, vlen(vsub(PAD.pos, camPos)) > 25e3 && fl.phase !== 'ready');
+
+  /* --- HUD, 카운트다운, 차트, 소리 --- */
+  const tel = fl.telemetry(); tel.t = simT;
+  updateHUD(tel);
+  if (fl.phase === 'countdown') {
+    const sec = Math.ceil(-simT);
+    if (sec !== vis.lastCount && sec >= 1 && sec <= 3) { vis.lastCount = sec; banner(String(sec), '발사 카운트다운', 'count', 0.85); sfx.tone(880, 0.16, 'sine', 0.18); }
+  }
+  if (bannerTimer > 0) { bannerTimer -= dt; if (bannerTimer <= 0) $('banner').classList.remove('show'); }
+  if (flying) { profAdd(simT, tel); if (fl.tSeco !== null && simT > fl.tSeco + 30) prof.frozen = true; }
+  vis.chartTimer -= dt;
+  if (prof.dirty && vis.chartTimer <= 0) { prof.dirty = false; vis.chartTimer = 0.1; drawChart(); }
+  const near = camCtl.mode === 'follow' ? clamp(250/camDist, 0.15, 1) : 0.12;
+  sfx.engine(engineOn ? b.throttle*near : 0, airK);
+}
+
+/* ============================ 메인 루프 / UI ============================ */
+function frame(nowMs) {
+  requestAnimationFrame(frame);
+  const now = nowMs/1000;
+  let dt = lastNow < 0 ? 0.016 : now - lastNow; lastNow = now;
+  dt = clamp(dt, 0, 0.1);
+  realTime += dt;
+  if (flight.running) {
+    simAcc += dt*warp;
+    let n = 0;
+    while (simAcc >= DT && n < 8000) { flight.step(DT); simAcc -= DT; n++; }
+    if (n >= 8000) simAcc = 0;
+  }
+  updateFrame(dt);
+  renderer.render(scene, camera);
+  // 적응형 해상도: 느린 GPU에서 픽셀 비율을 낮춘다
+  vis.frameTimes.push(dt); vis.prTimer += dt;
+  if (vis.prTimer > 2) {
+    const avg = vis.frameTimes.reduce((a, x) => a + x, 0)/vis.frameTimes.length, pr = renderer.getPixelRatio();
+    if (avg > 0.034 && pr > 0.6) { renderer.setPixelRatio(Math.max(0.6, pr*0.85)); renderer.setSize(window.innerWidth, window.innerHeight, false); }
+    vis.frameTimes.length = 0; vis.prTimer = 0;
+  }
+}
+function setWarp(w) {
+  warp = w;
+  document.querySelectorAll('[data-warp]').forEach(b => b.classList.toggle('on', +b.dataset.warp === w));
+}
+function doLaunch() {
+  sfx.ensure();
+  if (flight.launch()) { $('btnLaunch').disabled = true; vis.lastCount = null; }
+}
+function resetAll() {
+  flight.reset(); simAcc = 0; vis.lastSimT = flight.t; vis.emitPrev = null; vis.groundEmit = 0; vis.lastCount = null;
+  smoke.clear(); fx.clear(); fxSmoke.clear();
+  trail.n = 0; trail.lastT = -1e9;
+  Object.assign(prof, { pts: [], marks: [], lastT: -1e9, frozen: false, hover: null, dirty: true });
+  resetLog(); $('banner').className = ''; bannerTimer = 0;
+  rocket.fairings.forEach(f => { rocket.s2.add(f.pivot); f.pivot.position.set(0, FAIRING_COM, 0); f.pivot.quaternion.identity(); f.pivot.visible = true; });
+  rocket.s1.visible = true;
+  $('btnLaunch').disabled = false;
+  Object.assign(camCtl.follow, { az: 120*DEG, el: 0*DEG, dist: 125 });
+  camCtl.zoomAnim = null; camCtl.autoZoom = false;
+  setCamMode('follow', camCtl.cur.target);
+  sfx.engine(0, 1);
+}
+function currentTarget() { return camCtl.cur.target; }
+function initUI() {
+  $('btnLaunch').addEventListener('click', doLaunch);
+  $('btnReset').addEventListener('click', () => { sfx.ensure(); resetAll(); });
+  document.querySelectorAll('[data-warp]').forEach(b => b.addEventListener('click', () => setWarp(+b.dataset.warp)));
+  document.querySelectorAll('[data-cam]').forEach(b => b.addEventListener('click', () => setCamMode(b.dataset.cam, currentTarget())));
+  $('btnSound').addEventListener('click', () => { sfx.ensure(); sfx.setMuted(!sfx.muted); $('btnSound').textContent = sfx.muted ? '🔇' : '🔊'; });
+  window.addEventListener('keydown', e => {
+    if (e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
+    const k = e.key.toLowerCase();
+    if (e.code === 'Space') { e.preventDefault(); doLaunch(); }
+    else if (k === 'r') { sfx.ensure(); resetAll(); }
+    else if (k === '1') setWarp(1); else if (k === '2') setWarp(10); else if (k === '3') setWarp(100);
+    else if (k === 'c') setCamMode(camCtl.mode === 'follow' ? 'free' : 'follow', currentTarget());
+    else if (k === 'm') $('btnSound').click();
+  });
+  window.addEventListener('resize', () => {
+    renderer.setSize(window.innerWidth, window.innerHeight, false);
+    camera.aspect = window.innerWidth/window.innerHeight; camera.updateProjectionMatrix();
+    prof.dirty = true;
+  });
+}
+
+async function start() {
+  loadMsg.textContent = '절차적 지구 텍스처 생성 중…';
+  await new Promise(r => requestAnimationFrame(() => setTimeout(r, 0)));
+  try { initScene(); }
+  catch (e) {
+    loadMsg.innerHTML = '이 브라우저에서 WebGL2를 사용할 수 없습니다.<br>최신 Chrome/Edge에서 하드웨어 가속을 켜고 다시 열어 주세요.';
+    document.querySelector('.spinner').style.display = 'none';
+    return;
+  }
+  flight = new Flight(onFlightEvent);
+  vis.lastSimT = flight.t;
+  initInput(); initUI(); initChartHover();
+  updateFrame(0);
+  renderer.compile(scene, camera);
+  renderer.render(scene, camera);
+  drawChart();
+  $('loading').classList.add('hide');
+  requestAnimationFrame(frame);
+}
+
+if (THREE) start();
+else {
+  loadMsg.innerHTML = '3D 엔진(three.js)을 CDN에서 불러오지 못했습니다.<br>인터넷 연결을 확인한 뒤 새로고침하세요.';
+  document.querySelector('.spinner').style.display = 'none';
+}
+</script>
+</body>
+</html>
